@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>قاعدة بيانات العملاء - Gelato Happiness</title>
+<meta name="description" content="نظام إدارة علاقات العملاء (CRM) الخاص بـ Gelato Happiness - متابعة المحلات والتلاجات والعقود">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23132845'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='%23D8C48B' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{
+    --navy:#132845;
+    --navy-2:#1F3864;
+    --blue:#2E5395;
+    --gold:#B08D3E;
+    --gold-light:#D8C48B;
+    --bg:#F5F6FA;
+    --card:#FFFFFF;
+    --line:#E3E6EF;
+    --text:#1B2233;
+    --muted:#6B7280;
+    --danger:#C0392B;
+    --input-bg:#FAFBFD;
+    --modal-bg:#FFFFFF;
+    --cancel-bg:#F0F1F5;
+    --cancel-bg-hover:#E4E6ED;
+  }
+  html[data-theme="dark"]{
+    --navy:#0A1626;
+    --navy-2:#152A4A;
+    --blue:#3E6BB8;
+    --gold:#C9A24E;
+    --gold-light:#E4D19E;
+    --bg:#0F1420;
+    --card:#1A2233;
+    --line:#2B3448;
+    --text:#E8EAF0;
+    --muted:#9AA3B5;
+    --danger:#E0574A;
+    --input-bg:#141B2B;
+    --modal-bg:#1A2233;
+    --cancel-bg:#2B3448;
+    --cancel-bg-hover:#37415A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:'Tajawal', sans-serif;
+    color:var(--text);
+    min-height:100vh;
+    transition:background .2s, color .2s;
+  }
+  .topbar{
+    background:linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 55%, var(--blue) 100%);
+    padding:28px 20px 60px;
+    position:relative;
+    overflow:hidden;
+  }
+  .topbar::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+      radial-gradient(circle at 85% 20%, rgba(216,196,139,0.18), transparent 40%),
+      radial-gradient(circle at 10% 90%, rgba(255,255,255,0.06), transparent 35%);
+    pointer-events:none;
+  }
+  .topbar-inner{
+    max-width:1000px;
+    margin:0 auto;
+    position:relative;
+    z-index:1;
+  }
+  .topbar-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:18px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .brand-logo{
+    width:52px;
+    height:52px;
+    border-radius:14px;
+    background:#fff;
+    padding:6px;
+    object-fit:contain;
+    box-shadow:0 6px 16px rgba(0,0,0,0.18);
+    flex-shrink:0;
+  }
+  .brand-name{
+    font-family:'Cairo', sans-serif;
+    font-weight:800;
+    font-size:15px;
+    color:#fff;
+    line-height:1.3;
+  }
+  .brand-name span{
+    display:block;
+    font-family:'Tajawal', sans-serif;
+    font-weight:400;
+    font-size:11.5px;
+    color:rgba(255,255,255,0.65);
+  }
+  .theme-toggle{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.22);
+    border-radius:999px;
+    padding:6px 14px;
+    cursor:pointer;
+    font-family:'Cairo', sans-serif;
+    font-size:12.5px;
+    font-weight:700;
+    color:#fff;
+    white-space:nowrap;
+    transition:background .15s;
+  }
+  .theme-toggle:hover{ background:rgba(255,255,255,0.2); }
+  .eyebrow{
+    font-family:'Cairo', sans-serif;
+    font-size:12.5px;
+    letter-spacing:1.5px;
+    color:var(--gold-light);
+    font-weight:700;
+    margin-bottom:8px;
+  }
+  h1{
+    font-family:'Cairo', sans-serif;
+    color:#fff;
+    font-size:26px;
+    font-weight:800;
+    margin:0 0 4px;
+  }
+  .subtitle{
+    color:rgba(255,255,255,0.72);
+    font-size:14px;
+    margin:0;
+  }
+
+  .content{
+    max-width:1000px;
+    margin:-36px auto 40px;
+    padding:0 20px;
+    position:relative;
+    z-index:2;
+  }
+
+  .search-card{
+    background:var(--card);
+    border-radius:16px;
+    box-shadow:0 12px 30px rgba(19,40,69,0.14);
+    padding:18px;
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    align-items:stretch;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    flex:1;
+    min-width:180px;
+  }
+  .field label{
+    font-family:'Cairo', sans-serif;
+    font-size:12px;
+    font-weight:700;
+    color:var(--muted);
+  }
+  .field input, .field select{
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:11px 12px;
+    font-family:'Tajawal', sans-serif;
+    font-size:15px;
+    background:var(--input-bg);
+    color:var(--text);
+    outline:none;
+    transition:border-color .15s, background .2s;
+  }
+  .field input:focus, .field select:focus{
+    border-color:var(--blue);
+    background:var(--card);
+  }
+  .add-btn{
+    font-family:'Cairo', sans-serif;
+    font-weight:700;
+    font-size:14.5px;
+    background:var(--navy-2);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:0 22px;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:background .15s, transform .1s;
+    align-self:flex-end;
+    height:44px;
+  }
+  .add-btn:hover{ background:var(--navy); }
+  .add-btn:active{ transform:scale(0.97); }
+
+  .stats-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+    gap:14px;
+    margin:0 0 18px;
+  }
+  .stat-card{
+    background:var(--card);
+    border-radius:14px;
+    border:1px solid var(--line);
+    padding:16px 18px;
+    box-shadow:0 2px 8px rgba(19,40,69,0.05);
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .stat-value{
+    font-family:'Cairo', sans-serif;
+    font-weight:800;
+    font-size:26px;
+    color:var(--navy-2);
+    line-height:1.1;
+  }
+  html[data-theme="dark"] .stat-value{ color:var(--gold-light); }
+  .stat-label{
+    font-family:'Cairo', sans-serif;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--muted);
+  }
+  .stat-sub{
+    font-size:11.5px;
+    color:var(--muted);
+  }
+
+  .meta-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin:22px 2px 12px;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .count{
+    font-family:'Cairo', sans-serif;
+    font-size:13.5px;
+    color:var(--muted);
+    font-weight:600;
+  }
+  .count b{ color:var(--navy-2); }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(270px, 1fr));
+    gap:16px;
+  }
+
+  .card{
+    background:var(--card);
+    border-radius:14px;
+    border:1px solid var(--line);
+    padding:18px 18px 16px;
+    box-shadow:0 2px 8px rgba(19,40,69,0.05);
+    position:relative;
+    transition:box-shadow .15s, transform .15s, background .2s, border-color .2s;
+  }
+  .card:hover{
+    box-shadow:0 10px 24px rgba(19,40,69,0.12);
+    transform:translateY(-2px);
+  }
+  .gov-tag{
+    position:absolute;
+    top:16px;
+    left:16px;
+    background:linear-gradient(135deg, var(--gold), var(--gold-light));
+    color:#3B2F0E;
+    font-family:'Cairo', sans-serif;
+    font-size:11px;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:20px;
+  }
+  .badges{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin:10px 0 4px;
+  }
+  .badge{
+    font-family:'Cairo', sans-serif;
+    font-size:11px;
+    font-weight:700;
+    padding:4px 9px;
+    border-radius:8px;
+  }
+  .badge-fridge-yes{ background:#E4F5E9; color:#1E7A42; }
+  .badge-fridge-no{ background:#F0F1F5; color:var(--muted); }
+  .badge-contract-yes{ background:#EAF1FF; color:var(--blue); }
+  .badge-contract-no{ background:#FBEAE8; color:var(--danger); }
+  .badge-deposit-yes{ background:#FDF3DC; color:#8A6A0E; }
+  .badge-deposit-no{ background:#FBEAE8; color:var(--danger); }
+  .shop-name{
+    font-family:'Cairo', sans-serif;
+    font-weight:800;
+    font-size:17px;
+    color:var(--navy-2);
+    margin:0 0 2px;
+    padding-left:80px;
+  }
+  html[data-theme="dark"] .shop-name,
+  html[data-theme="dark"] .empty-title,
+  html[data-theme="dark"] .modal h2,
+  html[data-theme="dark"] .count b,
+  html[data-theme="dark"] .footer-credit .name{
+    color:var(--gold-light);
+  }
+  .owner-name{
+    font-size:13.5px;
+    color:var(--muted);
+    margin:0 0 12px;
+  }
+  .card-line{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    font-size:13.5px;
+    color:var(--text);
+    margin-bottom:7px;
+    line-height:1.5;
+  }
+  .card-line .ic{
+    flex-shrink:0;
+    width:18px;
+    text-align:center;
+    color:var(--blue);
+    font-size:14px;
+    margin-top:1px;
+  }
+  .phone-link{
+    color:var(--text);
+    text-decoration:none;
+    transition:color .15s;
+  }
+  .phone-link:hover{
+    color:var(--blue);
+    text-decoration:underline;
+  }
+  .card-actions{
+    display:flex;
+    gap:8px;
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px dashed var(--line);
+  }
+  .card-actions a, .card-actions button{
+    font-family:'Cairo', sans-serif;
+    font-size:12.5px;
+    font-weight:700;
+    text-decoration:none;
+    border:none;
+    border-radius:8px;
+    padding:7px 12px;
+    cursor:pointer;
+  }
+  .loc-btn{
+    background:#EAF1FF;
+    color:var(--blue);
+  }
+  .loc-btn:hover{ background:#DCE8FF; }
+  .edit-btn{
+    background:#FDF3DC;
+    color:#8A6A0E;
+  }
+  .edit-btn:hover{ background:#F8E7BC; }
+  .del-btn{
+    background:#FBEAE8;
+    color:var(--danger);
+    margin-right:auto;
+  }
+  .del-btn:hover{ background:#F6D6D2; }
+
+  .empty{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--muted);
+  }
+  .empty-title{
+    font-family:'Cairo', sans-serif;
+    font-weight:700;
+    font-size:16px;
+    color:var(--navy-2);
+    margin-bottom:6px;
+  }
+
+  .login-screen{
+    position:fixed; inset:0;
+    background:linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 55%, var(--blue) 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+    padding:20px;
+  }
+  .login-card{
+    background:var(--card);
+    border-radius:18px;
+    padding:32px 28px;
+    width:100%;
+    max-width:380px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.25);
+    text-align:center;
+  }
+  .login-logo{
+    width:56px; height:56px;
+    border-radius:14px;
+    object-fit:contain;
+    margin-bottom:14px;
+  }
+  .login-card h1{
+    font-family:'Cairo', sans-serif;
+    font-size:18px;
+    color:var(--navy-2);
+    margin:0 0 6px;
+  }
+  .login-card p.login-sub{
+    font-size:13px;
+    color:var(--muted);
+    margin:0 0 22px;
+  }
+  .login-card .field{ margin-bottom:14px; text-align:right; }
+  .login-card label{
+    display:block;
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .login-card input{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--input-bg);
+    color:var(--text);
+    font-family:'Tajawal', sans-serif;
+    font-size:14px;
+  }
+  .login-btn{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    background:var(--navy-2);
+    color:#fff;
+    font-family:'Cairo', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .login-btn:disabled{ opacity:0.6; cursor:not-allowed; }
+  .login-error{
+    color:var(--danger);
+    font-size:12.5px;
+    margin-top:10px;
+    min-height:16px;
+  }
+  .app-hidden{ display:none !important; }
+  .logout-btn{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.22);
+    border-radius:999px;
+    padding:6px 14px;
+    cursor:pointer;
+    color:#fff;
+    font-family:'Tajawal', sans-serif;
+    font-size:12.5px;
+  }
+  .modal-bg{
+    position:fixed; inset:0;
+    background:rgba(19,40,69,0.45);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+    padding:16px;
+  }
+  .modal-bg.open{ display:flex; }
+  .modal{
+    background:var(--modal-bg);
+    border-radius:16px;
+    padding:24px;
+    width:100%;
+    max-width:440px;
+    max-height:90vh;
+    overflow-y:auto;
+  }
+  .modal h2{
+    font-family:'Cairo', sans-serif;
+    font-size:18px;
+    color:var(--navy-2);
+    margin:0 0 16px;
+  }
+  .modal .field{ margin-bottom:12px; }
+  .modal-actions{
+    display:flex;
+    gap:10px;
+    margin-top:8px;
+  }
+  .modal-actions button{
+    flex:1;
+    font-family:'Cairo', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    border-radius:10px;
+    padding:11px;
+    cursor:pointer;
+    border:none;
+  }
+  .save-btn{ background:var(--navy-2); color:#fff; }
+  .save-btn:hover{ background:var(--navy); }
+  .cancel-btn{ background:var(--cancel-bg); color:var(--text); }
+  .cancel-btn:hover{ background:var(--cancel-bg-hover); }
+
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--navy);
+    color:#fff;
+    font-family:'Cairo', sans-serif;
+    font-size:13.5px;
+    font-weight:600;
+    padding:12px 20px;
+    border-radius:10px;
+    opacity:0;
+    pointer-events:none;
+    transition:all .25s;
+    z-index:100;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .site-footer{
+    max-width:1000px;
+    margin:20px auto 0;
+    padding:22px 20px 28px;
+    text-align:center;
+    border-top:1px solid var(--line);
+  }
+  .footer-credit{
+    font-family:'Cairo', sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--muted);
+    letter-spacing:0.3px;
+    direction:ltr;
+  }
+  .footer-credit .name{
+    color:var(--navy-2);
+    font-weight:800;
+  }
+
+  .lang-toggle{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.22);
+    border-radius:999px;
+    padding:6px 14px;
+    cursor:pointer;
+    font-family:'Cairo', sans-serif;
+    font-size:12.5px;
+    font-weight:700;
+    color:#fff;
+    white-space:nowrap;
+    transition:background .15s;
+  }
+  .lang-toggle:hover{ background:rgba(255,255,255,0.2); }
+  .toggle-group{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  @media (max-width:600px){
+    .search-card{ flex-direction:column; }
+    .add-btn{ align-self:stretch; width:100%; }
+    .topbar-header{ flex-wrap:wrap; }
+    .theme-toggle, .lang-toggle{ font-size:11.5px; padding:6px 10px; }
+    .brand-name{ font-size:13.5px; }
+    .brand-logo{ width:44px; height:44px; }
+  }
+
+  /* واتساب */
+  .whatsapp-link{
+    color:#1E7A42;
+    text-decoration:none;
+  }
+  .whatsapp-link:hover{ text-decoration:underline; }
+
+  /* شريط الترتيب + التصدير */
+  .toolbar-row{
+    display:flex;
+    align-items:flex-end;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:12px;
+  }
+  .export-btn{
+    font-family:'Cairo', sans-serif;
+    font-weight:700;
+    font-size:13.5px;
+    background:transparent;
+    color:var(--blue);
+    border:1.5px solid var(--blue);
+    border-radius:10px;
+    padding:0 18px;
+    height:42px;
+    cursor:pointer;
+    white-space:nowrap;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    transition:background .15s;
+  }
+  .export-btn:hover{ background:rgba(46,83,149,0.08); }
+
+  /* ترقيم الصفحات */
+  .pagination{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    margin:26px 0 6px;
+    flex-wrap:wrap;
+  }
+  .page-btn{
+    font-family:'Cairo', sans-serif;
+    font-size:13px;
+    font-weight:700;
+    min-width:36px;
+    height:36px;
+    padding:0 8px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--card);
+    color:var(--text);
+    cursor:pointer;
+  }
+  .page-btn:hover:not(:disabled){ border-color:var(--blue); color:var(--blue); }
+  .page-btn.active{ background:var(--navy-2); color:#fff; border-color:var(--navy-2); }
+  .page-btn:disabled{ opacity:0.4; cursor:not-allowed; }
+
+  /* Loading skeleton */
+  .skeleton-card{
+    background:var(--card);
+    border-radius:14px;
+    border:1px solid var(--line);
+    padding:18px;
+    height:172px;
+    position:relative;
+    overflow:hidden;
+  }
+  .skeleton-card::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:linear-gradient(90deg, transparent, rgba(120,130,160,0.14), transparent);
+    animation:skeleton-sweep 1.3s infinite;
+  }
+  @keyframes skeleton-sweep{
+    0%{ transform:translateX(-100%); }
+    100%{ transform:translateX(100%); }
+  }
+  .skeleton-line{
+    height:12px;
+    border-radius:6px;
+    background:var(--line);
+    margin-bottom:10px;
+  }
+
+  /* حالة خطأ في حقول الفورم */
+  .field.invalid input, .field.invalid select{
+    border-color:var(--danger) !important;
+  }
+  .field-error{
+    font-size:11.5px;
+    color:var(--danger);
+    display:none;
+  }
+  .field.invalid .field-error{ display:block; }
+
+  /* مودال تأكيد الحذف */
+  .confirm-modal{
+    background:var(--modal-bg);
+    border-radius:16px;
+    padding:24px;
+    width:100%;
+    max-width:360px;
+    text-align:center;
+  }
+  .confirm-modal p{
+    font-size:14.5px;
+    color:var(--text);
+    margin:0 0 20px;
+    line-height:1.6;
+  }
+  .confirm-modal .modal-actions button.confirm-danger-btn{
+    background:var(--danger);
+    color:#fff;
+  }
+  .confirm-modal .modal-actions button.confirm-danger-btn:hover{ opacity:0.9; }
+
+  .last-visit-note{
+    font-size:11.5px;
+    color:var(--muted);
+    margin-top:8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <img class="login-logo" id="loginLogo" src="" alt="Gelato Happiness">
+    <h1 id="txt-loginTitle">تسجيل الدخول</h1>
+    <p class="login-sub" id="txt-loginSub">قاعدة بيانات العملاء - Gelato Happiness</p>
+    <div class="field">
+      <label id="txt-loginEmailLabel">البريد الإلكتروني</label>
+      <input type="email" id="loginEmail" autocomplete="username">
+    </div>
+    <div class="field">
+      <label id="txt-loginPassLabel">كلمة المرور</label>
+      <input type="password" id="loginPassword" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="loginBtn" type="button">دخول</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<div id="appRoot" class="app-hidden">
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-header">
+      <div class="brand">
+        <img class="brand-logo" id="brandLogo" src="data:image/jpeg;base64,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" alt="Gelato Happiness">
+        <div class="brand-name">Gelato Happiness<span>إدارة علاقات المحلات</span></div>
+      </div>
+      <div class="toggle-group">
+        <button class="lang-toggle" id="langToggle" type="button">
+          <span id="langIcon">🌐</span>
+          <span id="langLabel">English</span>
+        </button>
+        <button class="theme-toggle" id="themeToggle" type="button">
+          <span id="themeIcon">🌙</span>
+          <span id="themeLabel">الوضع الداكن</span>
+        </button>
+        <button class="logout-btn" id="logoutBtn" type="button">
+          <span>🚪</span>
+          <span id="txt-logout">خروج</span>
+        </button>
+      </div>
+    </div>
+    <div class="eyebrow" id="txt-eyebrow">إدارة علاقات المحلات</div>
+    <h1 id="txt-title">قاعدة بيانات العملاء</h1>
+    <p class="subtitle" id="txt-subtitle">دوّر بالمحافظة أو باسم المحل، وكل بيانات العميل هتظهرلك في كارت واحد</p>
+  </div>
+</div>
+
+<div class="content">
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card">
+      <div class="stat-label" id="txt-statTotalLabel">إجمالي العملاء</div>
+      <div class="stat-value" id="statTotal">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" id="txt-statFridgeLabel">تلاجتنا</div>
+      <div class="stat-value" id="statFridge">0</div>
+      <div class="stat-sub" id="statFridgeSub"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" id="txt-statContractLabel">عندهم عقد</div>
+      <div class="stat-value" id="statContract">0</div>
+      <div class="stat-sub" id="statContractSub"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" id="txt-statTopGovLabel">أكتر محافظة</div>
+      <div class="stat-value" id="statTopGov">—</div>
+      <div class="stat-sub" id="statTopGovSub"></div>
+    </div>
+  </div>
+
+  <div class="search-card">
+    <div class="field">
+      <label id="txt-searchLabel">ابحث باسم المحل أو صاحب المحل</label>
+      <input type="text" id="searchInput" placeholder="اكتب اسم المحل أو الاسم...">
+    </div>
+    <div class="field" style="flex:0 0 200px;">
+      <label id="txt-govLabel">المحافظة</label>
+      <select id="govFilter">
+        <option value="">كل المحافظات</option>
+      </select>
+    </div>
+    <div class="field" style="flex:0 0 170px;">
+      <label id="txt-fridgeLabel">التلاجة</label>
+      <select id="fridgeFilter">
+        <option value="" id="opt-all">الكل</option>
+        <option value="yes" id="opt-fridgeYes">تلاجتنا</option>
+        <option value="no" id="opt-fridgeNo">مش تلاجتنا</option>
+      </select>
+    </div>
+    <button class="add-btn" id="openAddBtn" type="button">+ إضافة عميل</button>
+  </div>
+
+  <div class="toolbar-row">
+    <div class="field" style="flex:0 0 200px;">
+      <label id="txt-sortLabel">الترتيب حسب</label>
+      <select id="sortSelect">
+        <option value="dateDesc" id="opt-sortDateDesc">تاريخ الإضافة (الأحدث)</option>
+        <option value="dateAsc" id="opt-sortDateAsc">تاريخ الإضافة (الأقدم)</option>
+        <option value="nameAsc" id="opt-sortNameAsc">اسم المحل (أ-ي)</option>
+        <option value="nameDesc" id="opt-sortNameDesc">اسم المحل (ي-أ)</option>
+        <option value="govAsc" id="opt-sortGovAsc">المحافظة</option>
+      </select>
+    </div>
+    <button class="export-btn" id="exportBtn" type="button">⬇️ <span id="txt-exportBtn">تصدير Excel/CSV</span></button>
+  </div>
+
+  <div class="meta-row">
+    <div class="count" id="countLabel">جاري التحميل...</div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="pagination" id="pagination"></div>
+  <div class="empty" id="emptyState" style="display:none;">
+    <div class="empty-title" id="txt-emptyTitle">مفيش عملاء مطابقين</div>
+    <div id="txt-emptyDesc">جرّب تغيّر كلمة البحث أو المحافظة، أو ضيف عميل جديد</div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2 id="modalTitle">إضافة عميل جديد</h2>
+    <div class="field" id="fld_shop">
+      <label id="txt-shopLabel">اسم المحل *</label>
+      <input type="text" id="f_shop">
+      <span class="field-error" id="err_shop">لازم تكتب اسم المحل</span>
+    </div>
+    <div class="field">
+      <label id="txt-ownerLabel">اسم صاحب المحل</label>
+      <input type="text" id="f_owner">
+    </div>
+    <div class="field">
+      <label id="txt-govLabel2">المحافظة *</label>
+      <select id="f_gov"></select>
+    </div>
+    <div class="field">
+      <label id="txt-addressLabel">العنوان</label>
+      <input type="text" id="f_address">
+    </div>
+    <div class="field" id="fld_phone">
+      <label id="txt-phoneLabel">رقم التليفون</label>
+      <input type="tel" id="f_phone" inputmode="tel">
+      <span class="field-error" id="err_phone">رقم التليفون لازم يكون أرقام بس</span>
+    </div>
+    <div class="field">
+      <label id="txt-locationLabel">رابط اللوكيشن (Google Maps)</label>
+      <input type="text" id="f_location">
+    </div>
+    <div class="field">
+      <label id="txt-notesLabel">ملاحظات</label>
+      <textarea id="f_notes" rows="3" style="border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;font-family:'Tajawal', sans-serif;font-size:15px;background:var(--input-bg);color:var(--text);outline:none;resize:vertical;"></textarea>
+    </div>
+    <div class="field">
+      <label id="txt-lastVisitLabel">تاريخ آخر زيارة/متابعة</label>
+      <input type="date" id="f_lastVisit">
+    </div>
+
+    <div class="field">
+      <label id="txt-fridgeOwnerLabel">التلاجة بتاعة مين؟</label>
+      <select id="f_fridge">
+        <option value="no" id="opt-fridgeOwnerNo">مش تلاجتنا</option>
+        <option value="yes" id="opt-fridgeOwnerYes">تلاجتنا</option>
+      </select>
+    </div>
+
+    <div id="contractFields">
+      <div class="field">
+        <label id="txt-contractLabel">عندها عقد؟</label>
+        <select id="f_contract">
+          <option value="no" id="opt-contractNo">لأ</option>
+          <option value="yes" id="opt-contractYes">أيوه</option>
+        </select>
+      </div>
+      <div class="field">
+        <label id="txt-depositLabel">دفع تأمين؟</label>
+        <select id="f_deposit">
+          <option value="no" id="opt-depositNo">لأ</option>
+          <option value="yes" id="opt-depositYes">أيوه</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="cancel-btn" id="cancelBtn" type="button">إلغاء</button>
+      <button class="save-btn" id="saveBtn" type="button">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="deleteModalBg">
+  <div class="confirm-modal">
+    <p id="txt-confirmDelete">متأكد إنك عايز تمسح العميل ده؟</p>
+    <div class="modal-actions">
+      <button class="cancel-btn" id="deleteCancelBtn" type="button">إلغاء</button>
+      <button class="confirm-danger-btn" id="deleteConfirmBtn" type="button">حذف</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer class="site-footer">
+  <div class="footer-credit">Designed by <span class="name">Mohamed Ragheh</span></div>
+</footer>
+</div>
+
+<script>
+// ============================================================
+// إعدادات Firebase - غيّر القيم دي ببيانات مشروعك من Firebase Console
+// (خطوات الحصول عليها موجودة في التعليمات اللي وصلتك مع الملف)
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAfDQZljCbF_39RoVKy4ifAMAkDhCDY1Tg",
+  authDomain: "rageh-48f1c.firebaseapp.com",
+  projectId: "rageh-48f1c",
+  storageBucket: "rageh-48f1c.firebasestorage.app",
+  messagingSenderId: "685120727560",
+  appId: "1:685120727560:web:3e851272f5e887f1a07fbd"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const customersCol = db.collection('customers');
+
+const GOVERNORATES = [
+  "القاهرة","الجيزة","الإسكندرية","الدقهلية","البحيرة","الفيوم","الغربية","الإسماعيلية",
+  "المنوفية","المنيا","القليوبية","الوادي الجديد","السويس","اسوان","اسيوط","بني سويف",
+  "بورسعيد","دمياط","جنوب سيناء","كفر الشيخ","مطروح","الأقصر","قنا","شمال سيناء",
+  "سوهاج","الشرقية","بورسعيد"
+];
+const UNIQUE_GOVS = [...new Set(GOVERNORATES)];
+
+const GOV_EN = {
+  "القاهرة":"Cairo", "الجيزة":"Giza", "الإسكندرية":"Alexandria", "الدقهلية":"Dakahlia",
+  "البحيرة":"Beheira", "الفيوم":"Fayoum", "الغربية":"Gharbia", "الإسماعيلية":"Ismailia",
+  "المنوفية":"Monufia", "المنيا":"Minya", "القليوبية":"Qalyubia", "الوادي الجديد":"New Valley",
+  "السويس":"Suez", "اسوان":"Aswan", "اسيوط":"Assiut", "بني سويف":"Beni Suef",
+  "بورسعيد":"Port Said", "دمياط":"Damietta", "جنوب سيناء":"South Sinai", "كفر الشيخ":"Kafr El Sheikh",
+  "مطروح":"Matrouh", "الأقصر":"Luxor", "قنا":"Qena", "شمال سيناء":"North Sinai",
+  "سوهاج":"Sohag", "الشرقية":"Sharqia"
+};
+function govDisplay(g){
+  return currentLang === 'en' ? (GOV_EN[g] || g) : g;
+}
+
+const I18N = {
+  ar: {
+    eyebrow: 'إدارة علاقات المحلات',
+    title: 'قاعدة بيانات العملاء',
+    subtitle: 'دوّر بالمحافظة أو باسم المحل، وكل بيانات العميل هتظهرلك في كارت واحد',
+    searchLabel: 'ابحث باسم المحل أو صاحب المحل',
+    searchPlaceholder: 'اكتب اسم المحل أو الاسم...',
+    govLabel: 'المحافظة',
+    all: 'الكل',
+    allGovs: 'كل المحافظات',
+    fridgeLabel: 'التلاجة',
+    fridgeYes: 'تلاجتنا',
+    fridgeNo: 'مش تلاجتنا',
+    addBtn: '+ إضافة عميل',
+    emptyTitle: 'مفيش عملاء مطابقين',
+    emptyDesc: 'جرّب تغيّر كلمة البحث أو المحافظة، أو ضيف عميل جديد',
+    modalTitleAdd: 'إضافة عميل جديد',
+    modalTitleEdit: 'تعديل بيانات العميل',
+    shopLabel: 'اسم المحل *',
+    ownerLabel: 'اسم صاحب المحل',
+    govLabel2: 'المحافظة *',
+    addressLabel: 'العنوان',
+    phoneLabel: 'رقم التليفون',
+    locationLabel: 'رابط اللوكيشن (Google Maps)',
+    fridgeOwnerLabel: 'التلاجة بتاعة مين؟',
+    fridgeOwnerNo: 'مش تلاجتنا',
+    fridgeOwnerYes: 'تلاجتنا',
+    contractLabel: 'عندها عقد؟',
+    yes: 'أيوه',
+    no: 'لأ',
+    depositLabel: 'دفع تأمين؟',
+    cancel: 'إلغاء',
+    save: 'حفظ',
+    ownerPrefix: 'صاحب المحل: ',
+    openLocation: 'فتح اللوكيشن',
+    edit: 'تعديل',
+    delete: 'حذف',
+    fridgeBadgeYes: '🧊 تلاجتنا',
+    fridgeBadgeNo: 'تلاجة مش بتاعتنا',
+    contractBadgeYes: '📄 عندها عقد',
+    contractBadgeNo: 'من غير عقد',
+    depositBadgeYes: '💰 دفع تأمين',
+    depositBadgeNo: 'من غير تأمين',
+    toastDeleted: 'اتمسح العميل',
+    toastSaved: 'اتحفظ بنجاح',
+    toastSaveError: 'حصل خطأ في الحفظ، جرب تاني',
+    toastConnError: 'حصل خطأ في الاتصال بالقاعدة - راجع إعدادات Firebase',
+    toastShopRequired: 'لازم تكتب اسم المحل',
+    confirmDelete: 'متأكد إنك عايز تمسح العميل ده؟',
+    loading: 'جاري التحميل...',
+    themeDark: 'الوضع الداكن',
+    themeLight: 'الوضع الفاتح',
+    countLabel: (f,t) => `عدد النتائج: <b>${f}</b> من إجمالي <b>${t}</b>`,
+    loginTitle: 'تسجيل الدخول',
+    loginSub: 'قاعدة بيانات العملاء - Gelato Happiness',
+    loginEmailLabel: 'البريد الإلكتروني',
+    loginPassLabel: 'كلمة المرور',
+    loginBtn: 'دخول',
+    logout: 'خروج',
+    statTotalLabel: 'إجمالي العملاء',
+    statFridgeLabel: 'تلاجتنا',
+    statFridgeSub: (n,pct) => `${n} من إجمالي العملاء (${pct}%)`,
+    statContractLabel: 'عندهم عقد',
+    statContractSub: (n,pct) => `${n} من أصحاب التلاجات (${pct}%)`,
+    statTopGovLabel: 'أكتر محافظة',
+    statTopGovSub: (n) => `${n} عميل`,
+    statNoData: '—',
+    notesLabel: 'ملاحظات',
+    lastVisitLabel: 'تاريخ آخر زيارة/متابعة',
+    sortLabel: 'الترتيب حسب',
+    sortDateDesc: 'تاريخ الإضافة (الأحدث)',
+    sortDateAsc: 'تاريخ الإضافة (الأقدم)',
+    sortNameAsc: 'اسم المحل (أ-ي)',
+    sortNameDesc: 'اسم المحل (ي-أ)',
+    sortGovAsc: 'المحافظة',
+    exportBtn: 'تصدير Excel/CSV',
+    exportEmpty: 'مفيش بيانات عشان تتصدّر',
+    whatsapp: 'واتساب',
+    phoneInvalid: 'رقم التليفون لازم يكون أرقام بس',
+    lastVisitPrefix: 'آخر متابعة: ',
+    csvHeaders: ['اسم المحل','صاحب المحل','المحافظة','العنوان','التليفون','رابط اللوكيشن','التلاجة بتاعتنا','عندها عقد','دفع تأمين','ملاحظات','آخر زيارة'],
+    pageOf: (p,total) => `صفحة ${p} من ${total}`
+  },
+  en: {
+    eyebrow: 'SHOP RELATIONSHIP MANAGEMENT',
+    title: 'Customer Database',
+    subtitle: 'Search by governorate or shop name — all customer details appear in one card',
+    searchLabel: 'Search by shop or owner name',
+    searchPlaceholder: 'Type shop or owner name...',
+    govLabel: 'Governorate',
+    all: 'All',
+    allGovs: 'All Governorates',
+    fridgeLabel: 'Fridge',
+    fridgeYes: 'Ours',
+    fridgeNo: 'Not Ours',
+    addBtn: '+ Add Customer',
+    emptyTitle: 'No matching customers',
+    emptyDesc: 'Try changing the search term or governorate, or add a new customer',
+    modalTitleAdd: 'Add New Customer',
+    modalTitleEdit: 'Edit Customer Details',
+    shopLabel: 'Shop Name *',
+    ownerLabel: "Owner's Name",
+    govLabel2: 'Governorate *',
+    addressLabel: 'Address',
+    phoneLabel: 'Phone Number',
+    locationLabel: 'Location Link (Google Maps)',
+    fridgeOwnerLabel: 'Whose fridge is it?',
+    fridgeOwnerNo: 'Not Ours',
+    fridgeOwnerYes: 'Ours',
+    contractLabel: 'Has a Contract?',
+    yes: 'Yes',
+    no: 'No',
+    depositLabel: 'Paid Deposit?',
+    cancel: 'Cancel',
+    save: 'Save',
+    ownerPrefix: 'Owner: ',
+    openLocation: 'Open Location',
+    edit: 'Edit',
+    delete: 'Delete',
+    fridgeBadgeYes: '🧊 Our Fridge',
+    fridgeBadgeNo: 'Not Our Fridge',
+    contractBadgeYes: '📄 Has Contract',
+    contractBadgeNo: 'No Contract',
+    depositBadgeYes: '💰 Deposit Paid',
+    depositBadgeNo: 'No Deposit',
+    toastDeleted: 'Customer deleted',
+    toastSaved: 'Saved successfully',
+    toastSaveError: 'Error saving, please try again',
+    toastConnError: 'Connection error - check Firebase settings',
+    toastShopRequired: 'Shop name is required',
+    confirmDelete: 'Are you sure you want to delete this customer?',
+    loading: 'Loading...',
+    themeDark: 'Dark Mode',
+    themeLight: 'Light Mode',
+    countLabel: (f,t) => `Results: <b>${f}</b> of <b>${t}</b> total`,
+    loginTitle: 'Sign In',
+    loginSub: 'Customer Database - Gelato Happiness',
+    loginEmailLabel: 'Email',
+    loginPassLabel: 'Password',
+    loginBtn: 'Sign In',
+    logout: 'Logout',
+    statTotalLabel: 'Total Customers',
+    statFridgeLabel: 'Our Fridges',
+    statFridgeSub: (n,pct) => `${n} of all customers (${pct}%)`,
+    statContractLabel: 'With Contract',
+    statContractSub: (n,pct) => `${n} of fridge owners (${pct}%)`,
+    statTopGovLabel: 'Top Governorate',
+    statTopGovSub: (n) => `${n} customers`,
+    statNoData: '—',
+    notesLabel: 'Notes',
+    lastVisitLabel: 'Last Visit / Follow-up Date',
+    sortLabel: 'Sort by',
+    sortDateDesc: 'Date Added (Newest)',
+    sortDateAsc: 'Date Added (Oldest)',
+    sortNameAsc: 'Shop Name (A-Z)',
+    sortNameDesc: 'Shop Name (Z-A)',
+    sortGovAsc: 'Governorate',
+    exportBtn: 'Export Excel/CSV',
+    exportEmpty: 'No data to export',
+    whatsapp: 'WhatsApp',
+    phoneInvalid: 'Phone number must contain digits only',
+    lastVisitPrefix: 'Last follow-up: ',
+    csvHeaders: ['Shop Name','Owner Name','Governorate','Address','Phone','Location Link','Our Fridge','Has Contract','Deposit Paid','Notes','Last Visit'],
+    pageOf: (p,total) => `Page ${p} of ${total}`
+  }
+};
+
+let currentLang = 'ar';
+function t(key){ return I18N[currentLang][key]; }
+
+let customers = [];
+let editingId = null;
+
+const grid = document.getElementById('grid');
+const emptyState = document.getElementById('emptyState');
+const countLabel = document.getElementById('countLabel');
+const searchInput = document.getElementById('searchInput');
+const govFilter = document.getElementById('govFilter');
+const modalBg = document.getElementById('modalBg');
+const toast = document.getElementById('toast');
+const sortSelect = document.getElementById('sortSelect');
+const exportBtn = document.getElementById('exportBtn');
+const pagination = document.getElementById('pagination');
+const deleteModalBg = document.getElementById('deleteModalBg');
+const deleteCancelBtn = document.getElementById('deleteCancelBtn');
+const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
+
+let currentPage = 1;
+let pendingDeleteId = null;
+const PAGE_SIZE = 12;
+let dataLoaded = false;
+
+function populateGovSelects(){
+  const filterHtml = [`<option value="">${t('allGovs')}</option>`]
+    .concat(UNIQUE_GOVS.map(g => `<option value="${g}">${govDisplay(g)}</option>`)).join('');
+  govFilter.innerHTML = filterHtml;
+
+  const formSelect = document.getElementById('f_gov');
+  formSelect.innerHTML = UNIQUE_GOVS.map(g => `<option value="${g}">${govDisplay(g)}</option>`).join('');
+}
+populateGovSelects();
+
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(()=> toast.classList.remove('show'), 1800);
+}
+
+function skeletonHtml(){
+  return Array.from({length:6}).map(() => `
+    <div class="skeleton-card">
+      <div class="skeleton-line" style="width:60%;height:16px;"></div>
+      <div class="skeleton-line" style="width:40%;"></div>
+      <div class="skeleton-line" style="width:80%;"></div>
+      <div class="skeleton-line" style="width:50%;"></div>
+      <div class="skeleton-line" style="width:70%;margin-bottom:0;"></div>
+    </div>
+  `).join('');
+}
+
+function loadCustomers(){
+  dataLoaded = false;
+  emptyState.style.display = 'none';
+  pagination.innerHTML = '';
+  grid.innerHTML = skeletonHtml();
+  // بيسمع لأي تغيير في القاعدة لحظيًا - أي شخص يفتح الرابط هيشوف نفس البيانات محدثة
+  customersCol.orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+    customers = snapshot.docs.map(doc => doc.data());
+    dataLoaded = true;
+    currentPage = 1;
+    render();
+  }, (error) => {
+    console.error(error);
+    dataLoaded = true;
+    showToast(t('toastConnError'));
+  });
+}
+
+async function saveCustomer(customer){
+  await customersCol.doc(customer.id).set(customer);
+}
+
+async function deleteCustomer(id){
+  await customersCol.doc(id).delete();
+  showToast(t('toastDeleted'));
+}
+
+function whatsappDigits(phone){
+  let d = (phone||'').replace(/[^0-9]/g,'');
+  if(d.startsWith('00')) d = d.slice(2);
+  if(d.startsWith('0')) d = '2' + d; // مصر كافتراض
+  return d;
+}
+
+function cardHtml(c){
+  const phoneHtml = c.phone ? `<div class="card-line"><span class="ic">📞</span><a class="phone-link" href="tel:${escapeAttr(c.phone.replace(/[^0-9+]/g,''))}">${escapeHtml(c.phone)}</a><a class="whatsapp-link" href="https://wa.me/${whatsappDigits(c.phone)}" target="_blank" rel="noopener" title="${t('whatsapp')}">💬</a></div>` : '';
+  const addressHtml = c.address ? `<div class="card-line"><span class="ic">📍</span><span>${escapeHtml(c.address)}</span></div>` : '';
+  const ownerHtml = c.owner ? `<p class="owner-name">${t('ownerPrefix')}${escapeHtml(c.owner)}</p>` : '';
+  const locBtn = c.location ? `<a class="loc-btn" href="${escapeAttr(c.location)}" target="_blank" rel="noopener">${t('openLocation')}</a>` : '';
+  const notesHtml = c.notes ? `<div class="card-line"><span class="ic">📝</span><span>${escapeHtml(c.notes)}</span></div>` : '';
+  const lastVisitHtml = c.lastVisit ? `<div class="card-line"><span class="ic">🗓️</span><span>${t('lastVisitPrefix')}${escapeHtml(c.lastVisit)}</span></div>` : '';
+
+  const isFridge = c.fridge === 'yes';
+  const fridgeBadge = `<span class="badge ${isFridge ? 'badge-fridge-yes' : 'badge-fridge-no'}">${isFridge ? t('fridgeBadgeYes') : t('fridgeBadgeNo')}</span>`;
+  let contractBadges = '';
+  if(isFridge){
+    const hasContract = c.contract === 'yes';
+    const hasDeposit = c.deposit === 'yes';
+    contractBadges = `
+      <span class="badge ${hasContract ? 'badge-contract-yes' : 'badge-contract-no'}">${hasContract ? t('contractBadgeYes') : t('contractBadgeNo')}</span>
+      <span class="badge ${hasDeposit ? 'badge-deposit-yes' : 'badge-deposit-no'}">${hasDeposit ? t('depositBadgeYes') : t('depositBadgeNo')}</span>
+    `;
+  }
+
+  return `
+    <div class="card" data-id="${c.id}">
+      <span class="gov-tag">${escapeHtml(govDisplay(c.gov))}</span>
+      <h3 class="shop-name">${escapeHtml(c.shop)}</h3>
+      ${ownerHtml}
+      ${addressHtml}
+      ${phoneHtml}
+      ${notesHtml}
+      ${lastVisitHtml}
+      <div class="badges">
+        ${fridgeBadge}
+        ${contractBadges}
+      </div>
+      <div class="card-actions">
+        ${locBtn}
+        <button class="edit-btn" onclick="handleEdit('${c.id}')" type="button">${t('edit')}</button>
+        <button class="del-btn" onclick="handleDelete('${c.id}')" type="button">${t('delete')}</button>
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function escapeAttr(s){
+  return escapeHtml(s);
+}
+
+function updateStats(){
+  const total = customers.length;
+  document.getElementById('statTotal').textContent = total;
+
+  const fridgeOwners = customers.filter(c => c.fridge === 'yes');
+  const fridgeCount = fridgeOwners.length;
+  const fridgePct = total ? Math.round((fridgeCount/total)*100) : 0;
+  document.getElementById('statFridge').textContent = fridgeCount;
+  document.getElementById('statFridgeSub').textContent = total ? t('statFridgeSub')(fridgeCount, fridgePct) : '';
+
+  const contractCount = fridgeOwners.filter(c => c.contract === 'yes').length;
+  const contractPct = fridgeCount ? Math.round((contractCount/fridgeCount)*100) : 0;
+  document.getElementById('statContract').textContent = contractCount;
+  document.getElementById('statContractSub').textContent = fridgeCount ? t('statContractSub')(contractCount, contractPct) : '';
+
+  const govCounts = {};
+  customers.forEach(c => { if(c.gov) govCounts[c.gov] = (govCounts[c.gov]||0) + 1; });
+  let topGov = null, topCount = 0;
+  Object.entries(govCounts).forEach(([g,n]) => { if(n > topCount){ topGov = g; topCount = n; } });
+  document.getElementById('statTopGov').textContent = topGov ? govDisplay(topGov) : t('statNoData');
+  document.getElementById('statTopGovSub').textContent = topGov ? t('statTopGovSub')(topCount) : '';
+}
+
+function sortCustomers(list){
+  const mode = sortSelect ? sortSelect.value : 'dateDesc';
+  const sorted = list.slice();
+  switch(mode){
+    case 'dateAsc':
+      sorted.sort((a,b) => (a.createdAt||0) - (b.createdAt||0));
+      break;
+    case 'nameAsc':
+      sorted.sort((a,b) => (a.shop||'').localeCompare(b.shop||'', 'ar'));
+      break;
+    case 'nameDesc':
+      sorted.sort((a,b) => (b.shop||'').localeCompare(a.shop||'', 'ar'));
+      break;
+    case 'govAsc':
+      sorted.sort((a,b) => govDisplay(a.gov||'').localeCompare(govDisplay(b.gov||''), currentLang === 'en' ? 'en' : 'ar'));
+      break;
+    default: // dateDesc
+      sorted.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  }
+  return sorted;
+}
+
+function renderPagination(totalItems){
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  if(currentPage > totalPages) currentPage = totalPages;
+  if(totalPages <= 1){
+    pagination.innerHTML = '';
+    return;
+  }
+  let html = `<button class="page-btn" id="pagePrev" type="button" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+  for(let p = 1; p <= totalPages; p++){
+    html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" data-page="${p}" type="button">${p}</button>`;
+  }
+  html += `<button class="page-btn" id="pageNext" type="button" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
+  pagination.innerHTML = html;
+
+  const prevBtn = document.getElementById('pagePrev');
+  const nextBtn = document.getElementById('pageNext');
+  if(prevBtn) prevBtn.addEventListener('click', () => { currentPage--; render(); });
+  if(nextBtn) nextBtn.addEventListener('click', () => { currentPage++; render(); });
+  pagination.querySelectorAll('[data-page]').forEach(btn => {
+    btn.addEventListener('click', () => { currentPage = parseInt(btn.dataset.page, 10); render(); });
+  });
+}
+
+function render(){
+  if(!dataLoaded){
+    grid.innerHTML = skeletonHtml();
+    emptyState.style.display = 'none';
+    pagination.innerHTML = '';
+    return;
+  }
+
+  const q = searchInput.value.trim().toLowerCase();
+  const gov = govFilter.value;
+  const fridge = document.getElementById('fridgeFilter').value;
+
+  let filtered = customers.filter(c => {
+    const matchesGov = !gov || c.gov === gov;
+    const matchesQ = !q || (c.shop||'').toLowerCase().includes(q) || (c.owner||'').toLowerCase().includes(q);
+    const matchesFridge = !fridge || c.fridge === fridge;
+    return matchesGov && matchesQ && matchesFridge;
+  });
+
+  filtered = sortCustomers(filtered);
+
+  updateStats();
+  countLabel.innerHTML = t('countLabel')(filtered.length, customers.length);
+
+  if(filtered.length === 0){
+    grid.innerHTML = '';
+    emptyState.style.display = 'block';
+    pagination.innerHTML = '';
+  } else {
+    emptyState.style.display = 'none';
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    if(currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageItems = filtered.slice(start, start + PAGE_SIZE);
+    grid.innerHTML = pageItems.map(cardHtml).join('');
+    renderPagination(filtered.length);
+  }
+}
+
+function handleDelete(id){
+  pendingDeleteId = id;
+  deleteModalBg.classList.add('open');
+}
+
+deleteCancelBtn.addEventListener('click', () => {
+  pendingDeleteId = null;
+  deleteModalBg.classList.remove('open');
+});
+deleteModalBg.addEventListener('click', (e) => {
+  if(e.target === deleteModalBg){
+    pendingDeleteId = null;
+    deleteModalBg.classList.remove('open');
+  }
+});
+deleteConfirmBtn.addEventListener('click', () => {
+  if(pendingDeleteId){
+    deleteCustomer(pendingDeleteId);
+    pendingDeleteId = null;
+  }
+  deleteModalBg.classList.remove('open');
+});
+
+function clearFormErrors(){
+  document.getElementById('fld_shop').classList.remove('invalid');
+  document.getElementById('fld_phone').classList.remove('invalid');
+}
+
+function handleEdit(id){
+  const c = customers.find(x => x.id === id);
+  if(!c) return;
+  editingId = id;
+  clearFormErrors();
+  document.getElementById('modalTitle').textContent = t('modalTitleEdit');
+  document.getElementById('f_shop').value = c.shop || '';
+  document.getElementById('f_owner').value = c.owner || '';
+  document.getElementById('f_gov').value = c.gov || UNIQUE_GOVS[0];
+  document.getElementById('f_address').value = c.address || '';
+  document.getElementById('f_phone').value = c.phone || '';
+  document.getElementById('f_location').value = c.location || '';
+  document.getElementById('f_notes').value = c.notes || '';
+  document.getElementById('f_lastVisit').value = c.lastVisit || '';
+  document.getElementById('f_fridge').value = c.fridge || 'no';
+  document.getElementById('f_contract').value = c.contract || 'no';
+  document.getElementById('f_deposit').value = c.deposit || 'no';
+  toggleContractFields();
+  modalBg.classList.add('open');
+}
+
+document.getElementById('openAddBtn').addEventListener('click', () => {
+  editingId = null;
+  clearFormErrors();
+  document.getElementById('modalTitle').textContent = t('modalTitleAdd');
+  document.getElementById('f_shop').value = '';
+  document.getElementById('f_owner').value = '';
+  document.getElementById('f_gov').value = UNIQUE_GOVS[0];
+  document.getElementById('f_address').value = '';
+  document.getElementById('f_phone').value = '';
+  document.getElementById('f_location').value = '';
+  document.getElementById('f_notes').value = '';
+  document.getElementById('f_lastVisit').value = '';
+  document.getElementById('f_fridge').value = 'no';
+  document.getElementById('f_contract').value = 'no';
+  document.getElementById('f_deposit').value = 'no';
+  toggleContractFields();
+  modalBg.classList.add('open');
+});
+
+document.getElementById('cancelBtn').addEventListener('click', () => {
+  modalBg.classList.remove('open');
+});
+modalBg.addEventListener('click', (e) => {
+  if(e.target === modalBg) modalBg.classList.remove('open');
+});
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const shop = document.getElementById('f_shop').value.trim();
+  const gov = document.getElementById('f_gov').value;
+  const phone = document.getElementById('f_phone').value.trim();
+
+  clearFormErrors();
+  let hasError = false;
+
+  if(!shop){
+    document.getElementById('fld_shop').classList.add('invalid');
+    hasError = true;
+  }
+  if(phone && !/^[0-9+\-\s()]+$/.test(phone)){
+    document.getElementById('fld_phone').classList.add('invalid');
+    hasError = true;
+  }
+  if(hasError){
+    showToast(!shop ? t('toastShopRequired') : t('phoneInvalid'));
+    return;
+  }
+
+  const existing = editingId ? customers.find(c => c.id === editingId) : null;
+  const customer = {
+    id: editingId || (Date.now().toString(36) + Math.random().toString(36).slice(2,7)),
+    shop,
+    owner: document.getElementById('f_owner').value.trim(),
+    gov,
+    address: document.getElementById('f_address').value.trim(),
+    phone,
+    location: document.getElementById('f_location').value.trim(),
+    notes: document.getElementById('f_notes').value.trim(),
+    lastVisit: document.getElementById('f_lastVisit').value,
+    fridge: document.getElementById('f_fridge').value,
+    contract: document.getElementById('f_contract').value,
+    deposit: document.getElementById('f_deposit').value,
+    createdAt: existing ? existing.createdAt : Date.now()
+  };
+  try{
+    await saveCustomer(customer);
+    modalBg.classList.remove('open');
+    showToast(t('toastSaved'));
+  }catch(e){
+    showToast(t('toastSaveError'));
+  }
+});
+
+searchInput.addEventListener('input', () => { currentPage = 1; render(); });
+govFilter.addEventListener('change', () => { currentPage = 1; render(); });
+document.getElementById('fridgeFilter').addEventListener('change', () => { currentPage = 1; render(); });
+sortSelect.addEventListener('change', () => { currentPage = 1; render(); });
+
+// ============================================================
+// تصدير البيانات لـ CSV/Excel
+// ============================================================
+function csvEscape(val){
+  const s = (val === null || val === undefined) ? '' : String(val);
+  if(/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+exportBtn.addEventListener('click', () => {
+  if(!customers.length){
+    showToast(t('exportEmpty'));
+    return;
+  }
+  const headers = t('csvHeaders');
+  const rows = customers.map(c => [
+    c.shop || '',
+    c.owner || '',
+    govDisplay(c.gov || ''),
+    c.address || '',
+    c.phone || '',
+    c.location || '',
+    c.fridge === 'yes' ? t('yes') : t('no'),
+    c.contract === 'yes' ? t('yes') : t('no'),
+    c.deposit === 'yes' ? t('yes') : t('no'),
+    c.notes || '',
+    c.lastVisit || ''
+  ]);
+  const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `customers-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+function toggleContractFields(){
+  const isFridge = document.getElementById('f_fridge').value === 'yes';
+  document.getElementById('contractFields').style.display = isFridge ? 'block' : 'none';
+}
+document.getElementById('f_fridge').addEventListener('change', toggleContractFields);
+
+toggleContractFields();
+
+// ============================================================
+// الوضع الداكن / الفاتح
+// ============================================================
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = document.getElementById('themeIcon');
+const themeLabel = document.getElementById('themeLabel');
+
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  if(theme === 'dark'){
+    themeIcon.textContent = '☀️';
+    themeLabel.textContent = typeof t === 'function' ? t('themeLight') : 'الوضع الفاتح';
+  } else {
+    themeIcon.textContent = '🌙';
+    themeLabel.textContent = typeof t === 'function' ? t('themeDark') : 'الوضع الداكن';
+  }
+  localStorage.setItem('gelato-theme', theme);
+}
+
+function initTheme(){
+  const saved = localStorage.getItem('gelato-theme');
+  if(saved){
+    applyTheme(saved);
+  } else {
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(prefersDark ? 'dark' : 'light');
+  }
+}
+
+themeToggle.addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+});
+
+initTheme();
+
+// ============================================================
+// تعدد اللغات / Multi-language support
+// ============================================================
+const langToggle = document.getElementById('langToggle');
+const langLabel = document.getElementById('langLabel');
+
+const STATIC_TEXT_MAP = {
+  'txt-eyebrow': 'eyebrow',
+  'txt-title': 'title',
+  'txt-subtitle': 'subtitle',
+  'txt-searchLabel': 'searchLabel',
+  'txt-govLabel': 'govLabel',
+  'txt-fridgeLabel': 'fridgeLabel',
+  'opt-all': 'all',
+  'opt-fridgeYes': 'fridgeYes',
+  'opt-fridgeNo': 'fridgeNo',
+  'txt-emptyTitle': 'emptyTitle',
+  'txt-emptyDesc': 'emptyDesc',
+  'txt-shopLabel': 'shopLabel',
+  'txt-ownerLabel': 'ownerLabel',
+  'txt-govLabel2': 'govLabel2',
+  'txt-addressLabel': 'addressLabel',
+  'txt-phoneLabel': 'phoneLabel',
+  'txt-locationLabel': 'locationLabel',
+  'txt-fridgeOwnerLabel': 'fridgeOwnerLabel',
+  'opt-fridgeOwnerNo': 'fridgeOwnerNo',
+  'opt-fridgeOwnerYes': 'fridgeOwnerYes',
+  'txt-contractLabel': 'contractLabel',
+  'opt-contractNo': 'no',
+  'opt-contractYes': 'yes',
+  'txt-depositLabel': 'depositLabel',
+  'opt-depositNo': 'no',
+  'opt-depositYes': 'yes',
+  'cancelBtn': 'cancel',
+  'saveBtn': 'save',
+  'txt-statTotalLabel': 'statTotalLabel',
+  'txt-statFridgeLabel': 'statFridgeLabel',
+  'txt-statContractLabel': 'statContractLabel',
+  'txt-statTopGovLabel': 'statTopGovLabel',
+  'txt-loginTitle': 'loginTitle',
+  'txt-loginSub': 'loginSub',
+  'txt-loginEmailLabel': 'loginEmailLabel',
+  'txt-loginPassLabel': 'loginPassLabel',
+  'txt-logout': 'logout',
+  'txt-notesLabel': 'notesLabel',
+  'txt-lastVisitLabel': 'lastVisitLabel',
+  'txt-sortLabel': 'sortLabel',
+  'opt-sortDateDesc': 'sortDateDesc',
+  'opt-sortDateAsc': 'sortDateAsc',
+  'opt-sortNameAsc': 'sortNameAsc',
+  'opt-sortNameDesc': 'sortNameDesc',
+  'opt-sortGovAsc': 'sortGovAsc',
+  'txt-exportBtn': 'exportBtn',
+  'txt-confirmDelete': 'confirmDelete',
+  'deleteCancelBtn': 'cancel',
+  'deleteConfirmBtn': 'delete',
+  'err_shop': 'toastShopRequired',
+  'err_phone': 'phoneInvalid'
+};
+
+function applyLanguage(lang){
+  currentLang = lang;
+  document.documentElement.lang = lang;
+  // الصفحة بتفضل ثابتة الاتجاه (RTL) دايمًا، وبس النصوص هي اللي بتتغير
+  document.title = t('title');
+
+  Object.entries(STATIC_TEXT_MAP).forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = t(key);
+  });
+
+  document.getElementById('searchInput').placeholder = t('searchPlaceholder');
+  document.getElementById('openAddBtn').textContent = t('addBtn');
+  document.getElementById('themeLabel').textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? t('themeLight') : t('themeDark');
+  langLabel.textContent = lang === 'ar' ? 'English' : 'العربية';
+  const loginBtnEl = document.getElementById('loginBtn');
+  if(loginBtnEl && !loginBtnEl.disabled) loginBtnEl.textContent = t('loginBtn');
+
+  // إعادة بناء اللي اتحدد من المحافظات ونصوص العنوان في المودال
+  const wasEditing = editingId;
+  populateGovSelects();
+  document.getElementById('modalTitle').textContent = wasEditing ? t('modalTitleEdit') : t('modalTitleAdd');
+
+  render();
+  localStorage.setItem('gelato-lang', lang);
+}
+
+function initLanguage(){
+  const saved = localStorage.getItem('gelato-lang');
+  applyLanguage(saved === 'en' ? 'en' : 'ar');
+}
+
+langToggle.addEventListener('click', () => {
+  applyLanguage(currentLang === 'ar' ? 'en' : 'ar');
+});
+
+initLanguage();
+
+// ============================================================
+// تسجيل الدخول (Firebase Authentication)
+// ============================================================
+const auth = firebase.auth();
+
+const loginScreen = document.getElementById('loginScreen');
+const appRoot = document.getElementById('appRoot');
+const loginEmail = document.getElementById('loginEmail');
+const loginPassword = document.getElementById('loginPassword');
+const loginBtn = document.getElementById('loginBtn');
+const loginError = document.getElementById('loginError');
+const logoutBtn = document.getElementById('logoutBtn');
+
+// نسخ اللوجو من الهيدر لكارت تسجيل الدخول من غير تكرار الكود
+document.getElementById('loginLogo').src = document.getElementById('brandLogo').src;
+
+const AUTH_ERROR_MSGS = {
+  ar: {
+    'auth/invalid-email': 'صيغة البريد الإلكتروني غير صحيحة',
+    'auth/user-disabled': 'الحساب ده متوقف',
+    'auth/user-not-found': 'الحساب ده مش موجود',
+    'auth/wrong-password': 'كلمة المرور غلط',
+    'auth/invalid-credential': 'البريد أو كلمة المرور غلط',
+    'auth/too-many-requests': 'محاولات كتير غلط، حاول تاني بعد شوية',
+    default: 'حصل خطأ، حاول تاني'
+  },
+  en: {
+    'auth/invalid-email': 'Invalid email format',
+    'auth/user-disabled': 'This account is disabled',
+    'auth/user-not-found': 'Account not found',
+    'auth/wrong-password': 'Incorrect password',
+    'auth/invalid-credential': 'Incorrect email or password',
+    'auth/too-many-requests': 'Too many attempts, try again later',
+    default: 'Something went wrong, try again'
+  }
+};
+
+function authErrorMsg(code){
+  const dict = AUTH_ERROR_MSGS[currentLang] || AUTH_ERROR_MSGS.ar;
+  return dict[code] || dict.default;
+}
+
+function doLogin(){
+  const email = loginEmail.value.trim();
+  const password = loginPassword.value;
+  loginError.textContent = '';
+  if(!email || !password){
+    loginError.textContent = currentLang === 'en' ? 'Please fill in both fields' : 'من فضلك املأ الحقلين';
+    return;
+  }
+  loginBtn.disabled = true;
+  loginBtn.textContent = currentLang === 'en' ? 'Signing in...' : 'جاري الدخول...';
+  auth.signInWithEmailAndPassword(email, password)
+    .catch((error) => {
+      loginError.textContent = authErrorMsg(error.code);
+    })
+    .finally(() => {
+      loginBtn.disabled = false;
+      loginBtn.textContent = currentLang === 'en' ? 'Sign In' : 'دخول';
+    });
+}
+
+loginBtn.addEventListener('click', doLogin);
+loginPassword.addEventListener('keydown', (e) => { if(e.key === 'Enter') doLogin(); });
+loginEmail.addEventListener('keydown', (e) => { if(e.key === 'Enter') loginPassword.focus(); });
+
+logoutBtn.addEventListener('click', () => {
+  auth.signOut();
+});
+
+let unsubscribeCustomers = null;
+
+auth.onAuthStateChanged((user) => {
+  if(user){
+    loginScreen.classList.add('app-hidden');
+    appRoot.classList.remove('app-hidden');
+    loginEmail.value = '';
+    loginPassword.value = '';
+    loginError.textContent = '';
+    if(!unsubscribeCustomers){
+      loadCustomers();
+      unsubscribeCustomers = true;
+    }
+  } else {
+    appRoot.classList.add('app-hidden');
+    loginScreen.classList.remove('app-hidden');
+  }
+});
+
+</script>
+
+</body>
+</html>
