@@ -1,0 +1,2073 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مشاوير عربية 22</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<style>
+  :root{
+    --ink:#20242b;
+    --paper:#f7f5f0;
+    --panel:#ffffff;
+    --line:#e3ded2;
+    --navy:#1c3a4b;
+    --navy-dark:#132a37;
+    --amber:#b8873a;
+    --amber-light:#f4e6cd;
+    --danger:#a3392f;
+    --danger-dark:#832d25;
+    --input-bg:#fbfaf6;
+  }
+  *{box-sizing:border-box;}
+  html, body{
+    height:100%;
+  }
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Tajawal', system-ui, sans-serif;
+  }
+  header{
+    background:var(--navy);
+    color:#fdfaf3;
+    padding:16px 16px 18px;
+    position:sticky;
+    top:0;
+    z-index:20;
+    flex-shrink:0;
+    box-shadow:0 3px 10px rgba(0,0,0,.15);
+  }
+  header h1{
+    margin:0;
+    font-size:1.35rem;
+    font-weight:900;
+    letter-spacing:0.3px;
+  }
+  header p{
+    margin:6px 0 0;
+    font-size:.85rem;
+    color:#cfe0e6;
+    font-weight:400;
+  }
+  .header-top{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .title-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .header-btn.small{
+    flex:0 0 auto;
+    min-width:0;
+    padding:7px 14px;
+    font-size:.75rem;
+    background:transparent;
+  }
+  .main-actions .header-btn.primary{
+    flex:1 1 0;
+    min-width:0;
+    padding:12px 8px;
+    font-size:.92rem;
+    background:rgba(255,255,255,.2);
+  }
+  .main-actions .header-btn.more{
+    flex:0 0 auto;
+    min-width:0;
+    padding:12px 14px;
+  }
+  .more-menu{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .more-menu[hidden]{display:none;}
+  .more-menu .header-btn{min-width:0;}
+  .header-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    width:100%;
+  }
+  .header-btn{
+    flex:1 1 calc(50% - 8px);
+    min-width:110px;
+    text-align:center;
+    border:1px solid rgba(255,255,255,.28);
+    border-radius:8px;
+    padding:9px 10px;
+    font-family:inherit;
+    font-size:.78rem;
+    font-weight:700;
+    cursor:pointer;
+    background:rgba(255,255,255,.12);
+    color:#fdfaf3;
+    white-space:nowrap;
+  }
+  .header-btn:hover{background:rgba(255,255,255,.22);}
+  .header-btn:active{transform:translateY(1px);}
+  .header-btn.danger{background:var(--danger); border-color:var(--danger-dark);}
+  .header-btn.danger:hover{background:var(--danger-dark);}
+  .summary-bar{
+    display:flex;
+    gap:10px;
+    margin-top:12px;
+  }
+  .summary-card{
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.18);
+    border-radius:10px;
+    padding:8px 14px;
+    min-width:0;
+    flex:1 1 0;
+  }
+  .summary-card .label{font-size:.68rem;color:#b9cdd4;}
+  .summary-card .value{font-size:1.15rem;font-weight:700;color:#fdfaf3;margin-top:2px;}
+  .summary-card.money .value{color:var(--amber-light);}
+
+  main{
+    max-width:1100px;
+    width:100%;
+    margin:0 auto;
+    padding:16px;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+
+  .table-wrap{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    overflow:auto;
+    flex:1;
+    min-height:0;
+  }
+  table{
+    border-collapse:collapse;
+    width:100%;
+    min-width:760px;
+    font-size:.86rem;
+  }
+  thead th{
+    position:sticky;
+    top:0;
+    background:var(--navy-dark);
+    color:#fdfaf3;
+    font-weight:700;
+    padding:10px 6px;
+    text-align:center;
+    border-left:1px solid rgba(255,255,255,.08);
+    z-index:5;
+    white-space:nowrap;
+  }
+  thead th.city-head{text-align:right;padding-right:12px;min-width:180px;}
+  tbody td{
+    border-top:1px solid var(--line);
+    border-left:1px solid var(--line);
+    padding:6px;
+    text-align:center;
+    vertical-align:middle;
+  }
+  tbody tr:nth-child(even){background:#fbfaf5;}
+  tbody td.city{
+    text-align:right;
+    padding-right:12px;
+    font-weight:500;
+    white-space:nowrap;
+  }
+  tbody td.idx{color:#9a9284;font-size:.78rem;}
+  tbody td.price{color:#6b6455;font-variant-numeric:tabular-nums;}
+  input.day-input{
+    width:40px;
+    text-align:center;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:var(--input-bg);
+    padding:5px 2px;
+    font-family:inherit;
+    font-size:.85rem;
+    color:var(--ink);
+  }
+  input.day-input:focus{
+    outline:2px solid var(--navy);
+    outline-offset:1px;
+    background:#fff;
+  }
+  td.trips-total{font-weight:700;color:var(--navy);}
+  td.money-total{font-weight:900;color:var(--amber);white-space:nowrap;}
+
+  input.note-input{
+    width:130px;
+    text-align:right;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:var(--input-bg);
+    padding:5px 8px;
+    font-family:inherit;
+    font-size:.8rem;
+    color:var(--ink);
+  }
+  input.note-input:focus{
+    outline:2px solid var(--navy);
+    outline-offset:1px;
+    background:#fff;
+  }
+  th.note-head{min-width:140px;}
+
+  tfoot td{
+    position:sticky;
+    bottom:0;
+    background:var(--amber-light);
+    border-top:2px solid var(--amber);
+    font-weight:800;
+    padding:10px 6px;
+    text-align:center;
+  }
+  tfoot td.city{text-align:right;padding-right:12px;}
+  tfoot td.grand-money{color:var(--danger-dark);font-size:1rem;white-space:nowrap;}
+
+  .actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    margin-top:16px;
+    flex-wrap:wrap;
+  }
+  .clear-btn, .export-btn{
+    border:none;
+    border-radius:10px;
+    padding:12px 22px;
+    font-family:inherit;
+    font-size:.95rem;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+  }
+  .clear-btn{background:var(--danger); color:#fff;}
+  .clear-btn:hover{background:var(--danger-dark);}
+  .clear-btn:active{transform:translateY(1px);}
+  .export-btn{background:var(--navy); color:#fdfaf3;}
+  .export-btn:hover{background:var(--navy-dark);}
+  .export-btn:active{transform:translateY(1px);}
+
+  .save-note{
+    font-size:.75rem;
+    color:#8b8474;
+    margin-top:10px;
+    text-align:left;
+    min-height:1em;
+    flex-shrink:0;
+  }
+
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(20,20,20,.55);
+    display:flex; align-items:center; justify-content:center;
+    z-index:50;
+    padding:20px;
+  }
+  .modal-box{
+    background:#fff;
+    border-radius:14px;
+    padding:22px;
+    max-width:340px;
+    width:100%;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  .modal-box h2{margin:0 0 8px;font-size:1.1rem;color:var(--danger-dark);}
+  .modal-box p{margin:0 0 18px;font-size:.9rem;color:#4a453c;}
+  .modal-buttons{display:flex; gap:10px; justify-content:center;}
+  .modal-buttons button{
+    flex:1;
+    padding:11px 0;
+    border-radius:9px;
+    border:none;
+    font-family:inherit;
+    font-weight:700;
+    font-size:.9rem;
+    cursor:pointer;
+  }
+  .btn-cancel{background:#ece7db;color:#3c3730;}
+  .btn-confirm{background:var(--danger);color:#fff;}
+
+  /* --- شاشة التقارير: تصميم مبسّط --- */
+  .rep-tabs{display:flex; gap:4px; background:#efeade; border-radius:10px; padding:4px; margin-bottom:14px;}
+  .rep-tab{flex:1; border:none; background:transparent; padding:9px 6px; border-radius:8px; font-family:inherit; font-weight:700; font-size:.85rem; cursor:pointer; color:#6b6455;}
+  .rep-tab.active{background:var(--navy); color:#fdfaf3; box-shadow:0 2px 6px rgba(0,0,0,.15);}
+
+  .rep-chips{display:flex; gap:6px; overflow-x:auto; margin-bottom:8px; -webkit-overflow-scrolling:touch;}
+  .rep-chip{flex:0 0 auto; border:1px solid var(--line); background:#fff; border-radius:20px; padding:7px 14px; font-family:inherit; font-size:.78rem; font-weight:700; color:#4a453c; cursor:pointer; white-space:nowrap;}
+  .rep-chip.active{background:var(--navy); border-color:var(--navy); color:#fdfaf3;}
+
+  .rep-range-box{display:none; gap:8px; align-items:center; flex-wrap:wrap; margin:6px 0 12px; padding:10px; background:#fbfaf5; border:1px solid var(--line); border-radius:10px;}
+  .rep-range-box.open{display:flex;}
+
+  .rep-hero{background:linear-gradient(135deg,var(--navy),var(--navy-dark)); border-radius:14px; padding:14px 16px; color:#fdfaf3; margin-bottom:16px;}
+  .rep-hero-row{display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:.85rem; color:#cfe0e6;}
+  .rep-hero-row .val{font-weight:800; color:#fdfaf3;}
+  .rep-hero-row .val.expense{color:#f5b8ab;}
+  .rep-hero-net{display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,.25); margin-top:6px; padding-top:10px;}
+  .rep-hero-net .lbl{font-weight:800; font-size:.92rem;}
+  .rep-hero-net .val{font-size:1.2rem; font-weight:900; color:var(--amber-light);}
+
+  .rep-table{min-width:0;}
+
+  .rep-section-title{display:flex; align-items:center; justify-content:space-between; margin:18px 0 8px;}
+  .rep-section-title h3{font-size:.85rem; font-weight:800; color:var(--navy); margin:0;}
+
+  .rep-day{border:1px solid var(--line); border-radius:10px; margin-bottom:6px; overflow:hidden; background:#fff;}
+  .rep-day summary{list-style:none; display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 12px; cursor:pointer; font-size:.82rem;}
+  .rep-day summary::-webkit-details-marker{display:none;}
+  .rep-day-info{display:flex; flex-direction:column; gap:2px; text-align:right;}
+  .rep-day-date{font-weight:800; color:var(--ink);}
+  .rep-day-nums{font-size:.76rem; color:#8b8474;}
+  .rep-day .arrow{color:#9a9284; font-size:.7rem; transition:transform .15s; flex-shrink:0;}
+  .rep-day[open] .arrow{transform:rotate(180deg);}
+  .rep-day-body{padding:0 12px 12px;}
+  .rep-day-live-tag{font-size:.68rem; color:#8b8474; background:#efeade; border-radius:6px; padding:3px 8px; flex-shrink:0;}
+
+  .rep-weeks-scroll{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch;}
+  .rep-week-pill{flex:0 0 auto; border:1px solid var(--line); background:#fff; border-radius:10px; padding:8px 12px; text-align:right; cursor:pointer; font-family:inherit; min-width:140px;}
+  .rep-week-pill.current{border-color:var(--navy); border-width:2px;}
+  .rep-week-pill .wk-range{font-size:.66rem; color:#8b8474; margin-bottom:3px; white-space:nowrap;}
+  .rep-week-pill .wk-net{font-size:.9rem; font-weight:800;}
+
+  @media (max-width:480px){
+    header h1{font-size:1.1rem;}
+    .summary-card{min-width:96px;padding:7px 10px;}
+    table{font-size:.78rem;}
+    input.day-input{width:34px;padding:4px 1px;}
+    input.note-input{width:100px;}
+  }
+
+  #lockScreen{
+    position:fixed; inset:0; z-index:999;
+    background:var(--navy);
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+  }
+  #lockScreen .lock-box{
+    background:#fff; border-radius:16px; padding:28px 24px;
+    max-width:320px; width:100%; text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.3);
+  }
+  #lockScreen h2{margin:0 0 6px; color:var(--navy); font-size:1.2rem;}
+  #lockScreen p{margin:0 0 18px; font-size:.82rem; color:#7a7365;}
+  #lockScreen input{
+    width:100%; padding:12px; border:1px solid var(--line); border-radius:9px;
+    font-family:inherit; font-size:1rem; text-align:center; margin-bottom:12px; background:var(--input-bg);
+  }
+  #lockScreen button{
+    width:100%; padding:12px; border:none; border-radius:9px; background:var(--navy); color:#fff;
+    font-family:inherit; font-weight:700; font-size:.95rem; cursor:pointer;
+  }
+  #lockScreen .lock-error{color:var(--danger-dark); font-size:.8rem; margin-top:10px; min-height:1em;}
+  body.locked > *:not(#lockScreen){ display:none !important; }
+</style>
+</head>
+<body class="locked">
+
+<div id="lockScreen" style="display:none;">
+  <div class="lock-box">
+    <h2>مشاوير عربية 22</h2>
+    <input type="email" id="lockEmailInput" placeholder="الإيميل" autocomplete="username">
+    <input type="password" id="lockPasswordInput" placeholder="كلمة السر" autocomplete="current-password">
+    <button id="lockSubmitBtn">دخول</button>
+    <div class="lock-error" id="lockError"></div>
+  </div>
+</div>
+
+
+<header>
+  <div class="header-top">
+    <div class="title-row">
+      <h1>مشاوير عربية 22</h1>
+      <button class="header-btn small" id="logoutBtn">خروج</button>
+    </div>
+    <div class="header-actions main-actions">
+      <button class="header-btn primary" id="openReport">التقارير</button>
+      <button class="header-btn primary" id="openExpenses">المصروفات</button>
+      <button class="header-btn more" id="toggleMoreMenu">المزيد ▾</button>
+    </div>
+    <div class="more-menu" id="moreMenu" hidden>
+      <button class="header-btn admin-only" id="openDestinations">إدارة البلاد</button>
+      <button class="header-btn" id="downloadBackup">نسخة احتياطية</button>
+      <button class="header-btn" id="exportExcel">تصدير إكسل</button>
+      <button class="header-btn admin-only" id="openDateFix">تصحيح تواريخ الأرشيف</button>
+      <button class="header-btn danger admin-only" id="openClearModal">مسح البيانات</button>
+    </div>
+  </div>
+  <div class="summary-bar">
+    <div class="summary-card">
+      <div class="label">إجمالي المشاوير</div>
+      <div class="value" id="grandTrips">0</div>
+    </div>
+    <div class="summary-card money">
+      <div class="label">إجمالي الفلوس</div>
+      <div class="value" id="grandMoney">0</div>
+    </div>
+  </div>
+  <div id="weeklyAlertBanner" style="display:none; margin-top:10px; padding:8px 12px; border-radius:9px; font-size:.8rem; font-weight:700; text-align:center;"></div>
+</header>
+
+<main>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>م</th>
+          <th class="city-head">الوجهة (البلد)</th>
+          <th>السعر</th>
+          <th>السبت</th>
+          <th>الأحد</th>
+          <th>الاثنين</th>
+          <th>الثلاثاء</th>
+          <th>الأربعاء</th>
+          <th>الخميس</th>
+          <th>الجمعة</th>
+          <th>مشاوير</th>
+          <th>فلوس</th>
+          <th class="note-head">ملاحظات</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+      <tfoot>
+        <tr>
+          <td class="city" colspan="3">الإجمالي</td>
+          <td id="footSat">0</td>
+          <td id="footSun">0</td>
+          <td id="footMon">0</td>
+          <td id="footTue">0</td>
+          <td id="footWed">0</td>
+          <td id="footThu">0</td>
+          <td id="footFri">0</td>
+          <td id="footTrips">0</td>
+          <td class="grand-money" id="footMoney">0</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div class="save-note" id="saveNote">&nbsp;</div>
+</main>
+
+<div class="modal-overlay" id="modalOverlay" style="display:none;">
+  <div class="modal-box">
+    <h2>تفريغ الجدول؟</h2>
+    <p>هيتمسح عدد المشاوير في كل الأيام، ومينفعش ترجع.</p>
+    <div id="clearWeekPreview" style="background:var(--amber-light); border-radius:9px; padding:10px 12px; margin-bottom:14px; font-size:.82rem; text-align:right;"></div>
+    <div class="modal-buttons">
+      <button class="btn-cancel" id="cancelClear">إلغاء</button>
+      <button class="btn-confirm" id="confirmClear">امسح</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="reportOverlay" style="display:none; align-items:flex-start; overflow-y:auto; padding:40px 20px;">
+  <div class="modal-box" style="max-width:640px; text-align:right;">
+
+    <div class="rep-tabs">
+      <button class="rep-tab active" id="reportTabTrips">المشاوير</button>
+      <button class="rep-tab" id="reportTabExpenses">المصروفات</button>
+    </div>
+
+    <div class="rep-chips">
+      <button class="rep-chip" id="reportQuickToday">اليوم</button>
+      <button class="rep-chip active" id="reportQuickThisWeek">الأسبوع الحالي</button>
+      <button class="rep-chip" id="reportQuickLastWeek">الأسبوع اللي فات</button>
+      <button class="rep-chip" id="reportQuickCustom">فترة تانية</button>
+    </div>
+    <div class="rep-range-box" id="reportRangeBox">
+      <label style="font-size:.8rem; color:#4a453c;">من</label>
+      <input type="date" id="reportFrom" class="day-input" style="width:auto; padding:8px;">
+      <label style="font-size:.8rem; color:#4a453c;">إلى</label>
+      <input type="date" id="reportTo" class="day-input" style="width:auto; padding:8px;">
+      <button class="export-btn" id="runReport" style="flex:0 0 auto; padding:8px 16px;">اعرض</button>
+    </div>
+
+    <div class="rep-hero">
+      <div class="rep-hero-row"><span>إجمالي الدخل (مشاوير)</span><span class="val" id="sumIncome">0</span></div>
+      <div class="rep-hero-row"><span>إجمالي المصروفات</span><span class="val expense" id="sumExpenses">0</span></div>
+      <div class="rep-hero-net"><span class="lbl">الصافي</span><span class="val" id="sumNet">0</span></div>
+    </div>
+
+    <div id="tripsReportSection">
+      <div class="table-wrap" style="max-height:30vh;">
+        <table id="reportTable" class="rep-table">
+          <thead>
+            <tr><th class="city-head">البلد</th><th>عدد المشاوير</th><th>الفلوس</th></tr>
+          </thead>
+          <tbody id="reportTbody"></tbody>
+          <tfoot>
+            <tr><td class="city">الإجمالي</td><td id="reportFootTrips">0</td><td class="grand-money" id="reportFootMoney">0</td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div style="margin-top:10px;"><button class="export-btn" id="exportReportExcel" style="padding:8px 16px;">تصدير إكسل</button></div>
+
+      <div class="rep-section-title"><h3>تفاصيل الأيام</h3></div>
+      <div id="tripDaysList"></div>
+
+      <button class="btn-cancel" id="toggleLegacyDetails" style="display:none; margin-top:10px; padding:6px 12px; font-size:.72rem;">عرض تفاصيل البيانات القديمة</button>
+      <div id="legacyTripsDetails" style="display:none; margin-top:10px;"></div>
+    </div>
+
+    <div id="expensesReportSection" style="display:none;">
+      <div class="table-wrap" style="max-height:34vh;">
+        <table class="rep-table">
+          <thead><tr><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>ملاحظة</th></tr></thead>
+          <tbody id="expReportTbody"></tbody>
+          <tfoot>
+            <tr><td colspan="2" class="city">الإجمالي</td><td class="grand-money" id="expReportFootTotal">0</td><td></td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div id="expReportByCategory" style="margin-top:14px; padding:12px; background:var(--amber-light); border-radius:10px; font-size:.85rem;"></div>
+      <div style="margin-top:10px;"><button class="export-btn" id="exportExpenseReportExcel" style="padding:8px 16px;">تصدير إكسل</button></div>
+    </div>
+
+    <div class="rep-section-title">
+      <h3>أسابيع سابقة</h3>
+      <button class="btn-cancel" id="toggleOlderWeeks" style="padding:5px 12px; font-size:.72rem;">عرض الأسابيع اللي فاتت</button>
+    </div>
+    <div id="weeklySummaryList" class="rep-weeks-scroll"></div>
+
+    <div class="modal-buttons" style="margin-top:14px;">
+      <button class="btn-cancel" id="closeReport">قفل</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="destinationsOverlay" style="display:none; align-items:flex-start; overflow-y:auto; padding:40px 20px;">
+  <div class="modal-box" style="max-width:520px; text-align:right;">
+    <h2 style="color:var(--navy);">إدارة البلاد والأسعار</h2>
+    <div class="table-wrap" style="max-height:50vh;">
+      <table>
+        <thead><tr><th class="city-head">اسم البلد</th><th>السعر</th><th></th></tr></thead>
+        <tbody id="destinationsTbody"></tbody>
+      </table>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+      <input type="text" id="newDestName" class="note-input" placeholder="اسم بلد جديدة" style="width:160px;">
+      <input type="number" min="0" id="newDestPrice" class="day-input" placeholder="السعر" style="width:90px; padding:8px;">
+      <button class="btn-cancel" id="addDestinationRow" style="padding:8px 16px;">إضافة للقائمة</button>
+    </div>
+    <p id="destinationsError" style="font-size:.78rem;color:var(--danger-dark); margin-top:8px; display:none;"></p>
+    <div class="modal-buttons" style="margin-top:14px;">
+      <button class="btn-cancel" id="closeDestinations">إلغاء</button>
+      <button class="btn-confirm" style="background:var(--navy);" id="saveDestinations">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="dateFixOverlay" style="display:none; align-items:flex-start; overflow-y:auto; padding:40px 20px;">
+  <div class="modal-box" style="max-width:480px; text-align:right;">
+    <h2 style="color:var(--navy);">تصحيح تواريخ الأرشيف</h2>
+    <p style="font-size:.8rem;color:#4a453c;">لو أيام متسجلة بتاريخ غلط (زي المشكلة اللي حصلت من قبل)، هنا تقدر تنقلها كلها لتاريخها الصح دفعة واحدة، بدل ما تدخل Firebase وتعدّل كل يوم لوحده.</p>
+    <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+      <label style="font-size:.82rem;">من تاريخ (الغلط)
+        <input type="date" id="dateFixFrom" class="day-input" style="width:100%; padding:8px; margin-top:4px;">
+      </label>
+      <label style="font-size:.82rem;">لحد تاريخ (الغلط)
+        <input type="date" id="dateFixTo" class="day-input" style="width:100%; padding:8px; margin-top:4px;">
+      </label>
+      <label style="font-size:.82rem;">هتتنقل كام يوم؟ (رقم سالب = لورا، رقم موجب = لقدام)
+        <input type="number" id="dateFixShift" class="day-input" value="-7" style="width:100%; padding:8px; margin-top:4px;">
+      </label>
+    </div>
+    <div id="dateFixPreview" style="margin-top:12px; font-size:.8rem; color:#4a453c;"></div>
+    <p id="dateFixError" style="font-size:.78rem;color:var(--danger-dark); margin-top:8px; display:none;"></p>
+    <div class="modal-buttons" style="margin-top:14px;">
+      <button class="btn-cancel" id="closeDateFix">إلغاء</button>
+      <button class="btn-cancel" id="previewDateFix">عاين الأيام دي</button>
+      <button class="btn-confirm" style="background:var(--navy);" id="applyDateFix">نفّذ النقل</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="expensesOverlay" style="display:none; align-items:flex-start; overflow-y:auto; padding:40px 20px;">
+  <div class="modal-box" style="max-width:520px; text-align:right;">
+    <h2 style="color:var(--navy);">المصروفات</h2>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+      <input type="date" id="expenseDate" class="day-input" style="width:auto; padding:8px;">
+      <select id="expenseCategory" class="day-input" style="width:auto; padding:8px;">
+        <option value="fuel">جاز</option>
+        <option value="oil">زيت</option>
+        <option value="salary">مرتب</option>
+        <option value="maintenance">صيانة</option>
+        <option value="cart">كارتة</option>
+      </select>
+      <input type="number" min="0" id="expenseAmount" class="day-input" placeholder="المبلغ" style="width:90px; padding:8px;">
+      <input type="text" id="expenseNote" class="day-input" placeholder="ملاحظة" style="width:150px; padding:8px;">
+      <button class="export-btn" id="addExpenseBtn" style="padding:8px 16px;">إضافة</button>
+      <button class="btn-cancel" id="cancelEditExpenseBtn" style="padding:8px 16px; display:none;">إلغاء التعديل</button>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; margin:6px 0 10px; font-size:.8rem; color:#4a453c;">
+      <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+        <input type="checkbox" id="showAllExpensesToggle">
+        عرض كل المصروفات
+      </label>
+    </div>
+    <div class="table-wrap" style="max-height:42vh;">
+      <table>
+        <thead><tr><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>ملاحظة</th><th></th></tr></thead>
+        <tbody id="expensesTbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-buttons" style="margin-top:14px;">
+      <button class="btn-cancel" id="closeExpenses">قفل</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// تاريخ بالتوقيت المحلي (بدل UTC) عشان اليوم ميفضلش واقف على اليوم اللي فات بعد نص الليل
+function localDateStr(d){
+  d = d || new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + day;
+}
+const DEFAULT_DESTINATIONS = [
+["بني سويف",4500],["الفيوم",4000],["العياط",3500],
+["البدرشين",3000],["الحوامدية",3000],["أبو المطامير",3000],
+["الإسكندرية",3000],["الإسماعيلية",3000],["المحمودية",3000],["بورسعيد",3000],
+["العاشر",3000],["السادات",2750],["منوف",2750],["الشهداء",2750],
+["حوش عيسى",2750],["الكوم الأخضر",2750],["أشمون",2600],
+["الحسينية",2500],["القاهرة",2500],["بدر",2500],
+["الباجور",2300],["كفر الدوار",2300],
+["المنزلة",2100],["الصالحية",2100],["أبو حمص",2100],["دمنهور",2100],
+["بنها",2000],["الدلنجات",2000],["كفر صقر",2000],["منية النصر",1750],
+["سيدي سالم",1700],["إيتاي البارود",1700],
+["أبو كبير",1700],["قويسنا",1700],["الإبراهيمية",1700],["كوم حمادة",1700],["الزرقا",1700],["تلا",1700],
+["دكرنس",1700],
+["الزقازيق",1600],["متيا القمح",1600],["ديرب نجم",1600],["شبين",1600],["بلطيم",1600],
+["الحامول",1600],["كفر الزيات",1600],["بركة السبع",1600],
+["دسوق",1600],["دمياط",1700],["بيلا",1500],
+["كفر الشيخ",1500],["الشين",1500],["بسيون",1500],["السنبلاوين",1500],
+["تفهنا الأشراف",1300],["بلقاس",1300],
+["ميت غمر",1000],["طنطا",1000],["برهمتوش",1000],["زفتي",1000],
+["برج النور",900],["الدخلة",750]
+];
+let destinations = DEFAULT_DESTINATIONS.map(d => [...d]);
+
+const STORAGE_KEY = "masaweer-22-trips-v1";
+const DESTINATIONS_STORAGE_KEY = "masaweer-22-destinations-v1";
+const dayKeys = ["sat","sun","mon","tue","wed","thu","fri"];
+function freshDayRow(){ return {sat:0,sun:0,mon:0,tue:0,wed:0,thu:0,fri:0,note:""}; }
+function freshData(){
+  const d = {};
+  destinations.forEach(([name]) => { d[name] = freshDayRow(); });
+  return d;
+}
+// data بقى مبني على اسم البلد مش رقم الصف، عشان يفضل شغال صح حتى لو اتضافت أو اتشالت بلاد
+let data = freshData();
+function ensureDataShape(){
+  destinations.forEach(([name]) => {
+    if (!data[name]) data[name] = freshDayRow();
+  });
+}
+
+// --- Firebase (Firestore) setup: real sync across every device ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCp3KMfy3wKO5O49g-5IxFmq0WK9g4kbG8",
+  authDomain: "masaweer-22.firebaseapp.com",
+  projectId: "masaweer-22",
+  storageBucket: "masaweer-22.firebasestorage.app",
+  messagingSenderId: "130427013485",
+  appId: "1:130427013485:web:d8653b764294be1b373264",
+  measurementId: "G-QYDMYMN8D9"
+};
+
+// عدّل الإيميل ده بإيميلك، وأي حساب تاني في Firebase Authentication هيبقى "مسجل بيانات بس"
+// (يقدر يسجل مشاوير ومصروفات، ومقدرش يمسح البيانات ولا يعدّل أسعار البلاد)
+const ADMIN_EMAILS = ["your-email@example.com"];
+let isAdmin = false;
+function applyRolePermissions(){
+  document.querySelectorAll(".admin-only").forEach(el => {
+    el.style.display = isAdmin ? "" : "none";
+  });
+}
+
+let db = null;
+let docRef = null;
+let historyColRef = null;
+let expensesColRef = null;
+let metaDocRef = null;
+let destinationsDocRef = null;
+let firebaseReady = false;
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  db.enablePersistence({synchronizeTabs:true}).catch(err => {
+    console.warn("Offline persistence not enabled:", err && err.code);
+  });
+  docRef = db.collection("masaweer22").doc("trips");
+  historyColRef = db.collection("masaweer22_history");
+  expensesColRef = db.collection("masaweer22_expenses");
+  metaDocRef = db.collection("masaweer22").doc("meta");
+  destinationsDocRef = db.collection("masaweer22").doc("destinations");
+  firebaseReady = true;
+} catch(err) {
+  console.error("Firebase init failed, falling back to local storage only:", err);
+}
+
+// Firestore مبيقبلش مصفوفة جوه مصفوفة، فبنخزّن كل بلد ككائن {name, price} وبنرجّعه [اسم، سعر] عند القراءة
+function destinationsToStore(list){
+  return list.map(d => ({ name: d[0], price: d[1] }));
+}
+function destinationsFromStore(list){
+  return list.map(x => Array.isArray(x) ? [x[0], x[1]] : [x.name, x.price]);
+}
+
+async function loadDestinations(){
+  try {
+    if (firebaseReady && destinationsDocRef) {
+      const snap = await destinationsDocRef.get();
+      if (snap.exists && Array.isArray(snap.data().list) && snap.data().list.length > 0) {
+        destinations = destinationsFromStore(snap.data().list);
+        return;
+      }
+      // أول مرة: نحفظ القائمة الافتراضية في Firestore عشان تبقى قابلة للتعديل من الموقع بعد كده
+      await destinationsDocRef.set({ list: destinationsToStore(destinations) });
+      return;
+    }
+    const saved = window.localStorage.getItem(DESTINATIONS_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) destinations = parsed;
+    }
+  } catch(err) {
+    console.error("Loading destinations failed, using defaults:", err);
+  }
+}
+
+async function saveDestinations(newList){
+  if (firebaseReady && destinationsDocRef) {
+    await destinationsDocRef.set({ list: destinationsToStore(newList) });
+  } else {
+    window.localStorage.setItem(DESTINATIONS_STORAGE_KEY, JSON.stringify(newList));
+  }
+  destinations = newList;
+}
+
+function withTimeout(promise, ms){
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms))
+  ]);
+}
+
+// --- حماية بتسجيل دخول حقيقي (Firebase Authentication) ---
+// أقوى بكتير من باسورد مكتوب في الكود، لإن التحقق بيحصل من سيرفرات Google
+// مباشرة، مش من جوه المتصفح.
+function showApp(){
+  document.body.classList.remove("locked");
+  const lock = document.getElementById("lockScreen");
+  if (lock) lock.style.display = "none";
+  applyRolePermissions();
+}
+function showLock(){
+  const lock = document.getElementById("lockScreen");
+  if (lock) lock.style.display = "flex";
+}
+function tryUnlock(){
+  const email = document.getElementById("lockEmailInput").value.trim();
+  const password = document.getElementById("lockPasswordInput").value;
+  const errEl = document.getElementById("lockError");
+  const btn = document.getElementById("lockSubmitBtn");
+  if (!email || !password) {
+    errEl.textContent = "اكتب الإيميل وكلمة السر.";
+    return;
+  }
+  errEl.textContent = "";
+  btn.disabled = true;
+  btn.textContent = "بيتحقق...";
+  firebase.auth().signInWithEmailAndPassword(email, password)
+    .catch(err => {
+      errEl.textContent = "الإيميل أو كلمة السر غلط.";
+      console.error(err);
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = "دخول";
+    });
+}
+document.getElementById("lockSubmitBtn").addEventListener("click", tryUnlock);
+[document.getElementById("lockEmailInput"), document.getElementById("lockPasswordInput")].forEach(inp => {
+  inp.addEventListener("keydown", (e) => { if (e.key === "Enter") tryUnlock(); });
+});
+
+// --- قفل تلقائي: لو الموقع فاضل مفتوح 10 دقايق من غير أي لمسة/كليك، يرجع لشاشة الدخول ---
+const INACTIVITY_LIMIT_MS = 10 * 60 * 1000; // 10 دقايق
+let inactivityTimer = null;
+function resetInactivityTimer(){
+  clearTimeout(inactivityTimer);
+  if (!firebaseReady) return; // من غير حساب دخول أصلاً مفيش حاجة نقفلها
+  inactivityTimer = setTimeout(() => {
+    firebase.auth().signOut().catch(() => {});
+  }, INACTIVITY_LIMIT_MS);
+}
+["click","touchstart","keydown","mousemove","scroll"].forEach(evt => {
+  document.addEventListener(evt, () => { if (!document.body.classList.contains("locked")) resetInactivityTimer(); }, { passive: true });
+});
+
+let appStarted = false;
+if (firebaseReady) {
+  firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+      isAdmin = ADMIN_EMAILS.map(e => e.toLowerCase()).includes((user.email || "").toLowerCase());
+      showApp();
+      resetInactivityTimer(); // يبدأ عدّاد القفل التلقائي أول ما يدخل
+      if (!appStarted) { appStarted = true; initApp(); }
+    } else {
+      isAdmin = false;
+      clearTimeout(inactivityTimer);
+      showLock();
+    }
+  });
+} else {
+  // مفيش Firebase أصلًا (مثلًا الصفحة اتفتحت محليًا من غير نت) - نسيب الموقع يشتغل من غير قفل
+  showApp();
+  appStarted = true;
+  initApp();
+}
+
+const HISTORY_STORAGE_KEY = "masaweer-22-history-v1";
+const EXPENSES_STORAGE_KEY = "masaweer-22-expenses-v1";
+const LAST_CLEAR_STORAGE_KEY = "masaweer-22-last-clear-v1";
+const expenseCategories = [["fuel","جاز"],["oil","زيت"],["salary","مرتب"],["maintenance","صيانة"],["cart","كارتة"]];
+// كل مكان محتاج يجمّع المصروفات حسب النوع بيبني الكائن من القايمة دي، عشان لو ضفنا نوع جديد يتحسب في كل حتة لوحده
+function freshCategoryTotals(){
+  const o = {};
+  expenseCategories.forEach(([key]) => { o[key] = 0; });
+  return o;
+}
+function categoryLabel(cat){
+  const found = expenseCategories.find(c => c[0] === cat);
+  return found ? found[1] : cat;
+}
+
+async function getLastClearDate(){
+  if (firebaseReady && metaDocRef) {
+    const snap = await metaDocRef.get();
+    return (snap.exists && snap.data().lastClearDate) ? snap.data().lastClearDate : null;
+  }
+  return window.localStorage.getItem(LAST_CLEAR_STORAGE_KEY);
+}
+
+async function setLastClearDate(dateStr){
+  if (firebaseReady && metaDocRef) {
+    await metaDocRef.set({ lastClearDate: dateStr }, { merge: true });
+  } else {
+    window.localStorage.setItem(LAST_CLEAR_STORAGE_KEY, dateStr);
+  }
+}
+
+// Falls back to the browser's own localStorage if Firestore isn't available
+// (e.g. no internet, or the page is opened somewhere Firebase can't load).
+const storageAPI = {
+  async get(){
+    if (firebaseReady) {
+      const snap = await docRef.get();
+      if (snap.exists && snap.data().data) {
+        return JSON.stringify(snap.data().data);
+      }
+      return null;
+    }
+    return window.localStorage.getItem(STORAGE_KEY);
+  },
+  async set(value){
+    if (firebaseReady) {
+      await docRef.set({ data: JSON.parse(value), updatedAt: new Date().toISOString() });
+      return;
+    }
+    window.localStorage.setItem(STORAGE_KEY, value);
+  }
+};
+
+let applyingRemoteUpdate = false;
+if (firebaseReady) {
+  docRef.onSnapshot((snap) => {
+    if (!snap.exists) return;
+    const remote = snap.data().data;
+    if (!remote) return;
+    const remoteStr = JSON.stringify(remote);
+    const localStr = JSON.stringify(data);
+    if (remoteStr === localStr) return;
+    applyingRemoteUpdate = true;
+    data = normalizeLoadedData(remote);
+    buildRows();
+    recalcAllRows();
+    recalcFooter();
+    const note = document.getElementById("saveNote");
+    if (note) {
+      note.textContent = "اتحدّث من جهاز تاني ✓";
+      setTimeout(() => { note.textContent = "\u00a0"; }, 2000);
+    }
+    applyingRemoteUpdate = false;
+  }, (err) => {
+    console.error("Firestore sync error:", err);
+  });
+}
+
+const tbody = document.getElementById("tbody");
+
+function fmt(n){ return n.toLocaleString("en-US"); }
+
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+
+function buildRows(){
+  tbody.innerHTML = "";
+  destinations.forEach((d, i) => {
+    const [name, price] = d;
+    const row = data[name] || freshDayRow();
+    const tr = document.createElement("tr");
+    let dayCells = "";
+    dayKeys.forEach(k => {
+      dayCells += `<td><input class="day-input" type="number" min="0" inputmode="numeric" data-name="${esc(name)}" data-day="${k}" value="${row[k] || ""}"></td>`;
+    });
+    const noteVal = esc(row.note || "");
+    tr.innerHTML = `
+      <td class="idx">${i+1}</td>
+      <td class="city">${esc(name)}</td>
+      <td class="price">${fmt(price)}</td>
+      ${dayCells}
+      <td class="trips-total" id="trips-${i}">0</td>
+      <td class="money-total" id="money-${i}">0</td>
+      <td><input class="note-input" type="text" data-name="${esc(name)}" placeholder="ملاحظة..." value="${noteVal}"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll(".day-input").forEach(inp => {
+    inp.addEventListener("input", onInputChange);
+  });
+  tbody.querySelectorAll(".note-input").forEach(inp => {
+    inp.addEventListener("input", onNoteChange);
+  });
+}
+
+function onInputChange(e){
+  const name = e.target.dataset.name;
+  const day = e.target.dataset.day;
+  let val = parseInt(e.target.value);
+  if (isNaN(val) || val < 0) val = 0;
+  if (!data[name]) data[name] = freshDayRow();
+  data[name][day] = val;
+  recalcRow(name);
+  recalcFooter();
+  saveData();
+}
+
+function onNoteChange(e){
+  const name = e.target.dataset.name;
+  if (!data[name]) data[name] = freshDayRow();
+  data[name].note = e.target.value;
+  saveData();
+}
+
+function recalcRow(name){
+  const idx = destinations.findIndex(d => d[0] === name);
+  if (idx === -1) return;
+  const price = destinations[idx][1];
+  const row = data[name] || freshDayRow();
+  const trips = dayKeys.reduce((s,k) => s + (row[k]||0), 0);
+  const money = trips * price;
+  const tripsEl = document.getElementById(`trips-${idx}`);
+  const moneyEl = document.getElementById(`money-${idx}`);
+  if (tripsEl) tripsEl.textContent = fmt(trips);
+  if (moneyEl) moneyEl.textContent = fmt(money);
+}
+
+function recalcAllRows(){
+  destinations.forEach(([name]) => recalcRow(name));
+}
+
+const footIds = {sat:"footSat",sun:"footSun",mon:"footMon",tue:"footTue",wed:"footWed",thu:"footThu",fri:"footFri"};
+
+function recalcFooter(){
+  let grandTrips = 0, grandMoney = 0;
+  const dayTotals = {sat:0,sun:0,mon:0,tue:0,wed:0,thu:0,fri:0};
+  destinations.forEach(([name, price]) => {
+    const row = data[name] || freshDayRow();
+    let rowTrips = 0;
+    dayKeys.forEach(k => {
+      const v = row[k] || 0;
+      dayTotals[k] += v;
+      rowTrips += v;
+    });
+    grandTrips += rowTrips;
+    grandMoney += rowTrips * price;
+  });
+  dayKeys.forEach(k => {
+    document.getElementById(footIds[k]).textContent = fmt(dayTotals[k]);
+  });
+  document.getElementById("footTrips").textContent = fmt(grandTrips);
+  document.getElementById("footMoney").textContent = fmt(grandMoney);
+  document.getElementById("grandTrips").textContent = fmt(grandTrips);
+  document.getElementById("grandMoney").textContent = fmt(grandMoney);
+  scheduleWeeklyAlertCheck();
+}
+
+// --- تنبيه: المصروفات قربت من دخل الأسبوع الحالي ولا تخطته ---
+let weeklyAlertTimeout = null;
+function scheduleWeeklyAlertCheck(){
+  clearTimeout(weeklyAlertTimeout);
+  weeklyAlertTimeout = setTimeout(updateWeeklyAlert, 600);
+}
+async function updateWeeklyAlert(){
+  const banner = document.getElementById("weeklyAlertBanner");
+  if (!banner) return;
+  let income = 0;
+  destinations.forEach(([name, price]) => {
+    const row = data[name] || freshDayRow();
+    dayKeys.forEach(k => { income += (row[k] || 0) * price; });
+  });
+  const { from, to } = getWeekRange(new Date());
+  let expenses = 0;
+  try {
+    const all = await getAllExpenses();
+    expenses = all.filter(e => e.date >= from && e.date <= to).reduce((s,e) => s + (e.amount||0), 0);
+  } catch(err) { console.error(err); return; }
+
+  if (income <= 0 && expenses <= 0) { banner.style.display = "none"; return; }
+  const ratio = income > 0 ? expenses / income : (expenses > 0 ? Infinity : 0);
+  if (expenses > income) {
+    banner.style.display = "block";
+    banner.style.background = "var(--danger)";
+    banner.style.color = "#fff";
+    banner.textContent = `⚠️ الأسبوع ده خسران: المصروفات (${fmt(expenses)}) تخطّت الدخل (${fmt(income)})`;
+  } else if (ratio >= 0.8) {
+    banner.style.display = "block";
+    banner.style.background = "var(--amber-light)";
+    banner.style.color = "var(--danger-dark)";
+    banner.textContent = `تنبيه: المصروفات (${fmt(expenses)}) قربت من الدخل (${fmt(income)}) الأسبوع ده`;
+  } else {
+    banner.style.display = "none";
+  }
+}
+
+let saveTimeout = null;
+function saveData(){
+  const note = document.getElementById("saveNote");
+  note.textContent = "بيتحفظ...";
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(async () => {
+    try {
+      await storageAPI.set(JSON.stringify(data));
+      note.textContent = "اتحفظ ✓";
+      setTimeout(() => { note.textContent = "\u00a0"; }, 1500);
+    } catch(err){
+      note.textContent = "حصلت مشكلة في الحفظ";
+      console.error(err);
+    }
+  }, 350);
+}
+
+function normalizeLoadedData(parsed){
+  let result;
+  if (Array.isArray(parsed)) {
+    // شكل قديم: مصفوفة بترتيب البلاد وقتها. بنحولها لخريطة بالاسم.
+    result = {};
+    parsed.forEach((row, i) => {
+      if (destinations[i]) result[destinations[i][0]] = { ...freshDayRow(), ...row };
+    });
+  } else if (parsed && typeof parsed === "object") {
+    result = {};
+    Object.keys(parsed).forEach(name => { result[name] = { ...freshDayRow(), ...parsed[name] }; });
+  } else {
+    result = {};
+  }
+  destinations.forEach(([name]) => {
+    if (!result[name]) result[name] = freshDayRow();
+  });
+  return result;
+}
+
+async function loadData(){
+  try {
+    const value = await storageAPI.get();
+    if (value) {
+      data = normalizeLoadedData(JSON.parse(value));
+    } else {
+      data = freshData();
+    }
+  } catch(err){
+    // no saved data yet, that's fine
+    console.error(err);
+    data = freshData();
+  }
+  buildRows();
+  recalcAllRows();
+  recalcFooter();
+}
+
+// --- Expenses logic ---
+let expensesCache = [];
+let editingExpenseId = null;
+
+async function addExpense(dateStr, category, amount, note){
+  const entry = { date: dateStr, category, amount, note: note || "" };
+  if (firebaseReady && expensesColRef) {
+    await expensesColRef.add(entry);
+  } else {
+    const list = JSON.parse(window.localStorage.getItem(EXPENSES_STORAGE_KEY) || "[]");
+    entry.id = "local-" + Date.now() + "-" + Math.random().toString(36).slice(2,7);
+    list.push(entry);
+    window.localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(list));
+  }
+}
+
+async function updateExpense(id, dateStr, category, amount, note){
+  const entry = { date: dateStr, category, amount, note: note || "" };
+  if (firebaseReady && expensesColRef) {
+    await expensesColRef.doc(id).update(entry);
+  } else {
+    const list = JSON.parse(window.localStorage.getItem(EXPENSES_STORAGE_KEY) || "[]");
+    const idx = list.findIndex(e => e.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...entry };
+      window.localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(list));
+    }
+  }
+}
+
+function exitEditMode(fullReset){
+  const wasEditing = !!editingExpenseId;
+  editingExpenseId = null;
+  document.getElementById("expenseAmount").value = "";
+  document.getElementById("expenseNote").value = "";
+  if (fullReset || wasEditing) {
+    document.getElementById("expenseDate").value = localDateStr();
+    document.getElementById("expenseCategory").value = "fuel";
+  }
+  document.getElementById("addExpenseBtn").textContent = "إضافة";
+  document.getElementById("cancelEditExpenseBtn").style.display = "none";
+}
+
+async function getAllExpenses(){
+  if (firebaseReady && expensesColRef) {
+    const snap = await expensesColRef.get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }
+  return JSON.parse(window.localStorage.getItem(EXPENSES_STORAGE_KEY) || "[]");
+}
+
+async function deleteExpense(id){
+  if (firebaseReady && expensesColRef) {
+    await expensesColRef.doc(id).delete();
+  } else {
+    const list = JSON.parse(window.localStorage.getItem(EXPENSES_STORAGE_KEY) || "[]");
+    window.localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(list.filter(e => e.id !== id)));
+  }
+}
+
+async function refreshExpensesList(){
+  scheduleWeeklyAlertCheck();
+  const allExpenses = await getAllExpenses();
+  allExpenses.sort((a,b) => b.date.localeCompare(a.date));
+  const weekFrom = getWeekRange(new Date()).from; // أول يوم في الأسبوع الحالي (السبت)
+  const showAll = document.getElementById("showAllExpensesToggle").checked;
+  const expenses = showAll ? allExpenses : allExpenses.filter(e => e.date >= weekFrom);
+  expensesCache = expenses;
+  const tbody = document.getElementById("expensesTbody");
+  tbody.innerHTML = "";
+  if (expenses.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="padding:14px;color:#8b8474;">لسه مفيش مصروفات مسجلة</td></tr>`;
+    return;
+  }
+  expenses.forEach(e => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${e.date}</td><td>${categoryLabel(e.category)}</td><td class="money-total">${fmt(e.amount)}</td><td style="font-size:.78rem;color:#4a453c;">${esc(e.note || "")}</td><td style="white-space:nowrap;"><button class="btn-edit" data-edit-id="${e.id}" style="padding:4px 10px;font-size:.72rem;border-radius:6px;margin-inline-end:4px;">تعديل</button><button class="btn-confirm" data-id="${e.id}" style="padding:4px 10px;font-size:.72rem;border-radius:6px;">حذف</button></td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll("button[data-id]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("متأكد إنك عايز تمسح المصروف ده؟ الخطوة دي مينفعش ترجع فيها.")) return;
+      btn.disabled = true;
+      await deleteExpense(btn.dataset.id);
+      if (editingExpenseId === btn.dataset.id) exitEditMode();
+      refreshExpensesList();
+    });
+  });
+  tbody.querySelectorAll("button[data-edit-id]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const entry = expensesCache.find(e => e.id === btn.dataset.editId);
+      if (!entry) return;
+      editingExpenseId = entry.id;
+      document.getElementById("expenseDate").value = entry.date;
+      document.getElementById("expenseCategory").value = entry.category;
+      document.getElementById("expenseAmount").value = entry.amount;
+      document.getElementById("expenseNote").value = entry.note || "";
+      document.getElementById("addExpenseBtn").textContent = "تحديث";
+      document.getElementById("cancelEditExpenseBtn").style.display = "inline-block";
+      document.getElementById("expenseNote").focus();
+    });
+  });
+}
+
+document.getElementById("openExpenses").addEventListener("click", () => {
+  document.getElementById("expensesOverlay").style.display = "flex";
+  document.getElementById("expenseDate").value = localDateStr();
+  refreshExpensesList();
+});
+document.getElementById("closeExpenses").addEventListener("click", () => {
+  document.getElementById("expensesOverlay").style.display = "none";
+});
+document.getElementById("addExpenseBtn").addEventListener("click", async () => {
+  const date = document.getElementById("expenseDate").value;
+  const category = document.getElementById("expenseCategory").value;
+  const amount = parseFloat(document.getElementById("expenseAmount").value);
+  const note = document.getElementById("expenseNote").value;
+  if (!date || isNaN(amount) || amount <= 0) return;
+  const idBeingEdited = editingExpenseId;
+  // نمسح الخانات فورًا عشان لو المستخدم بدأ يكتب حاجة جديدة وهو مستني الحفظ، كتابته متتمسحش
+  exitEditMode();
+  if (idBeingEdited) {
+    await updateExpense(idBeingEdited, date, category, amount, note);
+  } else {
+    await addExpense(date, category, amount, note);
+  }
+  refreshExpensesList();
+});
+document.getElementById("cancelEditExpenseBtn").addEventListener("click", () => {
+  exitEditMode();
+});
+document.getElementById("showAllExpensesToggle").addEventListener("change", () => {
+  refreshExpensesList();
+});
+
+// --- Archive (history) logic: تحفظ صورة من كل يوم في الأسبوع قبل ما يتمسح، بتاريخه الحقيقي ---
+// بيحوّل جدول الأسبوع الحالي لأيام بتواريخها الحقيقية، بادئ من أول يوم في الأسبوع اللي هيتمسح
+// (مش من أسبوع النهاردة، عشان النهاردة ممكن يكون هو أول يوم في الأسبوع الجديد مش الأسبوع اللي بيتمسح)
+function buildWeekEntries(weekStartDateStr){
+  const weekStart = weekStartDateStr
+    ? new Date(weekStartDateStr + "T00:00:00")
+    : (() => { const d = new Date(); d.setDate(d.getDate() - 6); return d; })();
+  const entries = [];
+  dayKeys.forEach((dayKey, offset) => {
+    const dayDate = new Date(weekStart);
+    dayDate.setDate(weekStart.getDate() + offset);
+    const dateStr = localDateStr(dayDate);
+    const rows = destinations.map((d) => {
+      const row = data[d[0]] || freshDayRow();
+      const trips = row[dayKey] || 0;
+      return { name: d[0], price: d[1], trips, money: trips * d[1] };
+    });
+    const grandTrips = rows.reduce((s,r) => s + r.trips, 0);
+    if (grandTrips === 0) return; // مفيش مشاوير في اليوم ده أصلاً
+    const grandMoney = rows.reduce((s,r) => s + r.money, 0);
+    entries.push({ date: dateStr, rows, grandTrips, grandMoney });
+  });
+  return entries;
+}
+
+async function archiveCurrentWeek(weekStartDateStr){
+  const entries = buildWeekEntries(weekStartDateStr);
+  if (entries.length === 0) return;
+  if (firebaseReady && historyColRef) {
+    await Promise.all(entries.map(e => historyColRef.add(e)));
+  } else {
+    const existing = JSON.parse(window.localStorage.getItem(HISTORY_STORAGE_KEY) || "[]");
+    entries.forEach(e => {
+      e.id = "local-" + Date.now() + "-" + Math.random().toString(36).slice(2,7);
+      existing.push(e);
+    });
+    window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(existing));
+  }
+}
+
+async function getAllHistory(){
+  if (firebaseReady && historyColRef) {
+    const snap = await historyColRef.get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }
+  return JSON.parse(window.localStorage.getItem(HISTORY_STORAGE_KEY) || "[]");
+}
+
+async function updateHistoryEntry(id, rows, grandTrips, grandMoney){
+  if (firebaseReady && historyColRef) {
+    await historyColRef.doc(id).update({ rows, grandTrips, grandMoney });
+  } else {
+    const list = JSON.parse(window.localStorage.getItem(HISTORY_STORAGE_KEY) || "[]");
+    const idx = list.findIndex(e => e.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], rows, grandTrips, grandMoney };
+      window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(list));
+    }
+  }
+}
+
+async function updateHistoryEntryDate(id, newDate){
+  if (firebaseReady && historyColRef) {
+    await historyColRef.doc(id).update({ date: newDate });
+  } else {
+    const list = JSON.parse(window.localStorage.getItem(HISTORY_STORAGE_KEY) || "[]");
+    const idx = list.findIndex(e => e.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], date: newDate };
+      window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(list));
+    }
+  }
+}
+
+// بيانات قديمة (من قبل تحديث "التقارير بالتاريخ") كانت بتتحفظ كإجمالي أسبوع كامل على تاريخ واحد (archivedAt)
+// مش يوم بيوم زي دلوقتي، فمينفعش نحطها جوه فلتر يوم/نطاق محدد لإن ده هيدي نتيجة غلط (كل الأسبوع هيظهر في يوم واحد).
+// عشان كده بنفصلها: البيانات اللي عندها "date" (الجديدة) بس هي اللي بتدخل في فلتر التاريخ.
+function isLegacyEntry(entry){
+  return !entry.date && !!entry.archivedAt;
+}
+
+function buildTripsRangeTotals(history, from, to){
+  const totals = {}; // name -> {trips, money}
+  history.forEach(entry => {
+    if (isLegacyEntry(entry)) return; // مستبعدة من تقارير الفترة المحددة، وبتتحسب لوحدها
+    const dateStr = entry.date;
+    if (from && dateStr < from) return;
+    if (to && dateStr > to) return;
+    entry.rows.forEach(r => {
+      if (!totals[r.name]) totals[r.name] = {trips:0, money:0};
+      totals[r.name].trips += r.trips;
+      totals[r.name].money += r.money;
+    });
+  });
+  return totals;
+}
+
+function buildLegacyTotals(history){
+  let trips = 0, money = 0;
+  const entries = [];
+  history.forEach(entry => {
+    if (!isLegacyEntry(entry)) return;
+    trips += entry.grandTrips || 0;
+    money += entry.grandMoney || 0;
+    entries.push(entry);
+  });
+  entries.sort((a,b) => a.archivedAt.localeCompare(b.archivedAt));
+  return { trips, money, entries };
+}
+
+// أسبوع قديم اتحفظ على تاريخ واحد (archivedAt) بيمثل الأسبوع اللي قبله، فبنفترض إنه بيغطي
+// 6 أيام قبل تاريخ الحفظ لحد يوم الحفظ نفسه، عشان لو الفترة المختارة بتقع فيه، نحسب دخله
+// جوه "الصافي" بدل ما يفضل صفر ويطلع الرقم سالب من غير داعي.
+function legacyEntryRange(entry){
+  // يوم المسح هو أول يوم في الأسبوع الجديد، فالأسبوع القديم بيخلص قبله بيوم
+  const endDate = new Date(entry.archivedAt + "T00:00:00");
+  endDate.setDate(endDate.getDate() - 1);
+  const startDate = new Date(endDate);
+  startDate.setDate(startDate.getDate() - 6);
+  return { start: localDateStr(startDate), end: localDateStr(endDate) };
+}
+
+function buildLegacyIncomeForRange(history, from, to){
+  let trips = 0, money = 0;
+  history.forEach(entry => {
+    if (!isLegacyEntry(entry)) return;
+    const { start, end } = legacyEntryRange(entry);
+    // فيه تداخل بين مدى الأسبوع القديم المفترض وبين الفترة المختارة؟
+    if (to && start > to) return;
+    if (from && end < from) return;
+    trips += entry.grandTrips || 0;
+    money += entry.grandMoney || 0;
+  });
+  return { trips, money };
+}
+
+let currentReportTotals = {};
+function renderReport(totals){
+  currentReportTotals = totals;
+  const tbody = document.getElementById("reportTbody");
+  tbody.innerHTML = "";
+  let grandTrips = 0, grandMoney = 0;
+  destinations.forEach(([name]) => {
+    const t = totals[name];
+    if (!t || t.trips === 0) return;
+    grandTrips += t.trips;
+    grandMoney += t.money;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="city">${name}</td><td class="trips-total">${fmt(t.trips)}</td><td class="money-total">${fmt(t.money)}</td>`;
+    tbody.appendChild(tr);
+  });
+  if (grandTrips === 0) {
+    tbody.innerHTML = `<tr><td colspan="3" style="padding:16px;color:#8b8474;">مفيش بيانات في الفترة دي</td></tr>`;
+  }
+  document.getElementById("reportFootTrips").textContent = fmt(grandTrips);
+  document.getElementById("reportFootMoney").textContent = fmt(grandMoney);
+}
+
+// --- Report tabs: المشاوير / المصروفات، بفلتر تاريخ مشترك بينهم ---
+let reportHistoryCache = [];
+let reportExpensesCache = [];
+let currentExpenseReportRows = [];
+let currentExpenseReportTotals = { total: 0, byCategory: {} };
+let currentReportIncome = 0;
+
+function getWeekRange(baseDate){
+  const d = new Date(baseDate);
+  const dow = d.getDay(); // 0=Sun...6=Sat
+  const diff = (dow - 6 + 7) % 7; // days since the most recent Saturday
+  const start = new Date(d);
+  start.setDate(d.getDate() - diff);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return { from: localDateStr(start), to: localDateStr(end) };
+}
+
+// ملخص كل أسبوع (سبت → جمعة): إجمالي المشاوير، إجمالي المصروفات، والصافي
+function buildWeeklySummary(){
+  const weeks = {};
+  const ensure = (dateStr) => {
+    const r = getWeekRange(new Date(dateStr + "T00:00:00"));
+    if (!weeks[r.from]) weeks[r.from] = { from: r.from, to: r.to, income: 0, expenses: 0 };
+    return weeks[r.from];
+  };
+  ensure(localDateStr()); // الأسبوع الحالي يظهر دايمًا حتى لو فاضي
+  reportHistoryCache.forEach(entry => {
+    if (isLegacyEntry(entry)) {
+      ensure(legacyEntryRange(entry).end).income += entry.grandMoney || 0;
+    } else if (entry.date) {
+      ensure(entry.date).income += entry.grandMoney || 0;
+    }
+  });
+  reportExpensesCache.forEach(e => {
+    if (e.date) ensure(e.date).expenses += e.amount || 0;
+  });
+  return Object.values(weeks).sort((a,b) => b.from.localeCompare(a.from));
+}
+
+let showOlderWeeks = false;
+function renderWeeklySummary(){
+  const box = document.getElementById("weeklySummaryList");
+  const currentFrom = getWeekRange(new Date()).from;
+  const toggleBtn = document.getElementById("toggleOlderWeeks");
+  toggleBtn.textContent = showOlderWeeks ? "إخفاء الأسابيع اللي فاتت" : "عرض الأسابيع اللي فاتت";
+  const allWeeks = buildWeeklySummary();
+  const weeks = showOlderWeeks ? allWeeks : allWeeks.filter(w => w.from === currentFrom);
+  box.innerHTML = weeks.map(w => {
+    const net = w.income - w.expenses;
+    const netColor = net >= 0 ? "var(--navy)" : "var(--danger-dark)";
+    const isCurrent = w.from === currentFrom;
+    return `<button class="rep-week-pill${isCurrent ? " current" : ""}" data-week-from="${w.from}" data-week-to="${w.to}">
+      <div class="wk-range">${w.from} ← ${w.to}${isCurrent ? " (الحالي)" : ""}</div>
+      <div class="wk-net" style="color:${netColor};">${fmt(net)} صافي</div>
+    </button>`;
+  }).join("");
+  box.querySelectorAll("button[data-week-from]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      setActiveChip("reportQuickCustom");
+      document.getElementById("reportRangeBox").classList.add("open");
+      setReportRange(btn.dataset.weekFrom, btn.dataset.weekTo);
+      document.getElementById("reportOverlay").scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
+}
+document.getElementById("toggleOlderWeeks").addEventListener("click", () => {
+  showOlderWeeks = !showOlderWeeks;
+  renderWeeklySummary();
+});
+
+function setActiveChip(activeId){
+  document.querySelectorAll(".rep-chip").forEach(ch => ch.classList.remove("active"));
+  if (activeId) document.getElementById(activeId).classList.add("active");
+}
+
+function setReportRange(from, to){
+  document.getElementById("reportFrom").value = from;
+  document.getElementById("reportTo").value = to;
+  runReport();
+}
+
+function renderTripDaysList(from, to){
+  const container = document.getElementById("tripDaysList");
+  const days = reportHistoryCache
+    .filter(e => e.date) // بس اليوم بيوم (الجديدة)، مش القديمة المجمّعة
+    .filter(e => (!from || e.date >= from) && (!to || e.date <= to))
+    .sort((a,b) => b.date.localeCompare(a.date));
+  if (days.length === 0) {
+    container.innerHTML = `<p style="font-size:.8rem;color:#8b8474;padding:4px 2px;">مفيش أيام في الفترة دي</p>`;
+    return;
+  }
+  container.innerHTML = days.map(entry => {
+    const info = `<span class="rep-day-info"><span class="rep-day-date">${entry.date}</span><span class="rep-day-nums">${fmt(entry.grandTrips)} مشوار، ${fmt(entry.grandMoney)} جنيه</span></span>`;
+    if (entry.live) {
+      return `<div class="rep-day"><div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 12px;">${info}<span class="rep-day-live-tag">الأسبوع الحالي</span></div></div>`;
+    }
+    return `<details class="rep-day"><summary>${info}<span class="arrow">▾</span></summary><div class="rep-day-body" id="editDay-${entry.id}"></div></details>`;
+  }).join("");
+
+  container.querySelectorAll("details.rep-day").forEach(det => {
+    det.addEventListener("toggle", () => {
+      if (!det.open) return;
+      const box = det.querySelector(".rep-day-body");
+      if (box.dataset.built) return;
+      box.dataset.built = "1";
+      const id = box.id.replace("editDay-", "");
+      const entry = days.find(d => d.id === id);
+      box.innerHTML = `
+        <div class="table-wrap" style="max-height:34vh;">
+          <table class="rep-table">
+            <thead><tr><th class="city-head">البلد</th><th>عدد المشاوير</th></tr></thead>
+            <tbody>
+              ${entry.rows.map((r, i) => `<tr><td class="city">${esc(r.name)}</td><td><input type="number" min="0" class="day-input" data-row-idx="${i}" value="${r.trips}"></td></tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-buttons" style="margin-top:10px;">
+          <button class="btn-cancel" data-cancel-day="${id}">إلغاء</button>
+          <button class="btn-confirm" style="background:var(--navy);" data-save-day="${id}">حفظ</button>
+        </div>
+      `;
+      box.querySelector(`[data-cancel-day="${id}"]`).addEventListener("click", () => {
+        det.open = false;
+      });
+      box.querySelector(`[data-save-day="${id}"]`).addEventListener("click", async () => {
+        const inputs = box.querySelectorAll("input[data-row-idx]");
+        const newRows = entry.rows.map((r, i) => {
+          let trips = parseInt(inputs[i].value);
+          if (isNaN(trips) || trips < 0) trips = 0;
+          return { name: r.name, price: r.price, trips, money: trips * r.price };
+        });
+        const grandTrips = newRows.reduce((s,r) => s + r.trips, 0);
+        const grandMoney = newRows.reduce((s,r) => s + r.money, 0);
+        await updateHistoryEntry(id, newRows, grandTrips, grandMoney);
+        entry.rows = newRows;
+        entry.grandTrips = grandTrips;
+        entry.grandMoney = grandMoney;
+        // نحدّث النسخة المخزنة في الكاش الرئيسي كمان
+        const cacheEntry = reportHistoryCache.find(e => e.id === id);
+        if (cacheEntry) { cacheEntry.rows = newRows; cacheEntry.grandTrips = grandTrips; cacheEntry.grandMoney = grandMoney; }
+        runReport();
+      });
+    });
+  });
+}
+
+function runReport(){
+  const from = document.getElementById("reportFrom").value;
+  const to = document.getElementById("reportTo").value;
+
+  // تبويب المشاوير
+  const totals = buildTripsRangeTotals(reportHistoryCache, from, to);
+  renderReport(totals);
+  const preciseIncome = Object.values(totals).reduce((s,t) => s + t.money, 0);
+  renderTripDaysList(from, to);
+
+  // لو الفترة المختارة بتقع جوه أسبوع قديم كان متسجل كإجمالي واحد، بنضيف دخله للصافي
+  // (بدل ما يفضل صفر ويطلع الصافي سالب من غير داعي)، وبنقول للمستخدم إن ده حصل.
+  const legacyForRange = buildLegacyIncomeForRange(reportHistoryCache, from, to);
+  currentReportIncome = preciseIncome + legacyForRange.money;
+
+  const legacy = buildLegacyTotals(reportHistoryCache);
+  const legacyBtn = document.getElementById("toggleLegacyDetails");
+  const legacyDetails = document.getElementById("legacyTripsDetails");
+  if (legacy.trips > 0) {
+    legacyBtn.style.display = "inline-block";
+    legacyDetails.innerHTML = legacy.entries.map(entry => {
+      const rowsHtml = entry.rows.filter(r => r.trips > 0).map(r =>
+        `<tr><td class="city">${r.name}</td><td class="trips-total">${fmt(r.trips)}</td><td class="money-total">${fmt(r.money)}</td></tr>`
+      ).join("");
+      return `<div style="margin-bottom:12px;">
+        <p style="font-size:.78rem;color:#4a453c;font-weight:700;margin-bottom:6px;">أسبوع اتمسح في ${entry.archivedAt} — إجمالي ${fmt(entry.grandTrips)} مشوار، ${fmt(entry.grandMoney)} جنيه</p>
+        <div class="table-wrap" style="max-height:30vh;"><table><thead><tr><th class="city-head">البلد</th><th>عدد المشاوير</th><th>الفلوس</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>
+      </div>`;
+    }).join("");
+  } else {
+    legacyBtn.style.display = "none";
+    legacyDetails.style.display = "none";
+    legacyDetails.innerHTML = "";
+  }
+
+  // تبويب المصروفات
+  const rows = reportExpensesCache
+    .filter(e => (!from || e.date >= from) && (!to || e.date <= to))
+    .sort((a,b) => a.date.localeCompare(b.date));
+  currentExpenseReportRows = rows;
+  const byCategory = freshCategoryTotals();
+  let expTotal = 0;
+  rows.forEach(e => {
+    expTotal += e.amount;
+    if (byCategory[e.category] !== undefined) byCategory[e.category] += e.amount;
+  });
+  currentExpenseReportTotals = { total: expTotal, byCategory };
+
+  const tbody = document.getElementById("expReportTbody");
+  tbody.innerHTML = "";
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" style="padding:14px;color:#8b8474;">مفيش مصروفات في الفترة دي</td></tr>`;
+  } else {
+    rows.forEach(e => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${e.date}</td><td>${categoryLabel(e.category)}</td><td class="money-total">${fmt(e.amount)}</td><td style="font-size:.78rem;color:#4a453c;">${esc(e.note || "")}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  document.getElementById("expReportFootTotal").textContent = fmt(expTotal);
+  const catDiv = document.getElementById("expReportByCategory");
+  catDiv.innerHTML = expenseCategories.map(([key,label]) =>
+    `<div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>${label}</span><span style="font-weight:800;">${fmt(byCategory[key]||0)}</span></div>`
+  ).join("") + `<div style="display:flex; justify-content:space-between; border-top:1px solid var(--amber); padding-top:6px; margin-top:6px;"><span style="font-weight:800;">الإجمالي</span><span style="font-weight:900;font-size:1.05rem;">${fmt(expTotal)}</span></div>`;
+
+  // ملخص مشترك (نفس الفترة بالظبط لكل من المشاوير والمصروفات)
+  document.getElementById("sumIncome").textContent = fmt(currentReportIncome);
+  document.getElementById("sumExpenses").textContent = fmt(expTotal);
+  const net = currentReportIncome - expTotal;
+  const netEl = document.getElementById("sumNet");
+  netEl.textContent = fmt(net);
+  netEl.style.color = net >= 0 ? "var(--navy)" : "var(--danger-dark)";
+  renderWeeklySummary();
+}
+
+document.getElementById("openReport").addEventListener("click", async () => {
+  document.getElementById("reportOverlay").style.display = "flex";
+  document.getElementById("reportTabTrips").classList.add("active");
+  document.getElementById("reportTabExpenses").classList.remove("active");
+  document.getElementById("tripsReportSection").style.display = "block";
+  document.getElementById("expensesReportSection").style.display = "none";
+  setActiveChip("reportQuickThisWeek");
+  document.getElementById("reportRangeBox").classList.remove("open");
+  const [history, expenses, lastClearForReport] = await Promise.all([getAllHistory(), getAllExpenses(), getLastClearDate()]);
+  // مشاوير الأسبوع الحالي بتدخل في التقرير أول بأول من غير ما تضغط "مسح"
+  // لازم نستخدم تاريخ آخر مسح فعلي (مش افتراض إن النهاردة هو آخر يوم في الأسبوع)
+  // عشان أعمدة السبت/الأحد... تترجم لتواريخها الصح
+  const liveEntries = buildWeekEntries(lastClearForReport).map(e => ({ ...e, id: "live-" + e.date, live: true }));
+  reportHistoryCache = history.concat(liveEntries);
+  reportExpensesCache = expenses;
+  const { from, to } = getWeekRange(new Date());
+  document.getElementById("reportFrom").value = from;
+  document.getElementById("reportTo").value = to;
+  runReport();
+});
+document.getElementById("closeReport").addEventListener("click", () => {
+  document.getElementById("reportOverlay").style.display = "none";
+});
+
+document.getElementById("reportQuickToday").addEventListener("click", () => {
+  const today = localDateStr();
+  setActiveChip("reportQuickToday");
+  document.getElementById("reportRangeBox").classList.remove("open");
+  setReportRange(today, today);
+});
+document.getElementById("reportQuickThisWeek").addEventListener("click", () => {
+  const { from, to } = getWeekRange(new Date());
+  setActiveChip("reportQuickThisWeek");
+  document.getElementById("reportRangeBox").classList.remove("open");
+  setReportRange(from, to);
+});
+document.getElementById("reportQuickLastWeek").addEventListener("click", () => {
+  const lastWeekBase = new Date();
+  lastWeekBase.setDate(lastWeekBase.getDate() - 7);
+  const { from, to } = getWeekRange(lastWeekBase);
+  setActiveChip("reportQuickLastWeek");
+  document.getElementById("reportRangeBox").classList.remove("open");
+  setReportRange(from, to);
+});
+document.getElementById("reportQuickCustom").addEventListener("click", () => {
+  setActiveChip("reportQuickCustom");
+  document.getElementById("reportRangeBox").classList.add("open");
+});
+document.getElementById("runReport").addEventListener("click", runReport);
+document.getElementById("toggleLegacyDetails").addEventListener("click", () => {
+  const details = document.getElementById("legacyTripsDetails");
+  const btn = document.getElementById("toggleLegacyDetails");
+  const showing = details.style.display === "block";
+  details.style.display = showing ? "none" : "block";
+  btn.textContent = showing ? "عرض تفاصيل البيانات القديمة" : "إخفاء تفاصيل البيانات القديمة";
+});
+
+document.getElementById("reportTabTrips").addEventListener("click", () => {
+  document.getElementById("reportTabTrips").classList.add("active");
+  document.getElementById("reportTabExpenses").classList.remove("active");
+  document.getElementById("tripsReportSection").style.display = "block";
+  document.getElementById("expensesReportSection").style.display = "none";
+});
+document.getElementById("reportTabExpenses").addEventListener("click", () => {
+  document.getElementById("reportTabExpenses").classList.add("active");
+  document.getElementById("reportTabTrips").classList.remove("active");
+  document.getElementById("tripsReportSection").style.display = "none";
+  document.getElementById("expensesReportSection").style.display = "block";
+});
+
+document.getElementById("exportReportExcel").addEventListener("click", () => {
+  const from = document.getElementById("reportFrom").value || "";
+  const to = document.getElementById("reportTo").value || "";
+  const header = ["البلد","عدد المشاوير","الفلوس"];
+  const rows = [header];
+  let grandTrips = 0, grandMoney = 0;
+  destinations.forEach(([name]) => {
+    const t = currentReportTotals[name];
+    if (!t || t.trips === 0) return;
+    grandTrips += t.trips; grandMoney += t.money;
+    rows.push([name, t.trips, t.money]);
+  });
+  rows.push(["الإجمالي", grandTrips, grandMoney]);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws["!cols"] = [{wch:30},{wch:14},{wch:14}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "تقرير مشاوير");
+  XLSX.writeFile(wb, `تقرير_مشاوير_${from}_${to}.xlsx`);
+});
+
+document.getElementById("exportExpenseReportExcel").addEventListener("click", () => {
+  const from = document.getElementById("reportFrom").value || "";
+  const to = document.getElementById("reportTo").value || "";
+  const header = ["التاريخ","النوع","المبلغ","ملاحظة"];
+  const rows = [header];
+  currentExpenseReportRows.forEach(e => {
+    rows.push([e.date, categoryLabel(e.category), e.amount, e.note || ""]);
+  });
+  rows.push([]);
+  expenseCategories.forEach(([key, label]) => {
+    rows.push([label, "", currentExpenseReportTotals.byCategory[key] || 0, ""]);
+  });
+  rows.push(["الإجمالي", "", currentExpenseReportTotals.total, ""]);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws["!cols"] = [{wch:14},{wch:14},{wch:14},{wch:30}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "تقرير المصروفات");
+  XLSX.writeFile(wb, `تقرير_مصروفات_${from}_${to}.xlsx`);
+});
+
+// Clear modal logic
+const overlay = document.getElementById("modalOverlay");
+document.getElementById("openClearModal").addEventListener("click", async () => {
+  if (!isAdmin) { alert("الصلاحية دي للأدمن بس."); return; }
+  overlay.style.display = "flex";
+  // نعرض إجمالي مشاوير ومصروفات الأسبوع اللي هيتقفل فعليًا (بادئ من تاريخ آخر مسح)، مش أسبوع النهاردة
+  const preview = document.getElementById("clearWeekPreview");
+  preview.textContent = "بيتحسب...";
+  const lastClear = await getLastClearDate();
+  const from = lastClear || (() => { const d = new Date(); d.setDate(d.getDate() - 6); return localDateStr(d); })();
+  const toDate = new Date(from + "T00:00:00");
+  toDate.setDate(toDate.getDate() + 6);
+  const to = localDateStr(toDate);
+  const [trips, expenses] = await Promise.all([
+    Promise.resolve(buildWeekEntries(lastClear).reduce((s,e) => s + e.grandMoney, 0)),
+    getAllExpenses().then(list => list.filter(e => e.date >= from && e.date <= to).reduce((s,e) => s + e.amount, 0))
+  ]);
+  preview.innerHTML = `
+    <div style="display:flex; justify-content:space-between; margin-bottom:3px;"><span>إجمالي مشاوير الأسبوع (${from} → ${to})</span><span style="font-weight:800;">${fmt(trips)}</span></div>
+    <div style="display:flex; justify-content:space-between;"><span>إجمالي مصروفات نفس الأسبوع</span><span style="font-weight:800; color:var(--danger-dark);">${fmt(expenses)}</span></div>`;
+});
+document.getElementById("cancelClear").addEventListener("click", () => {
+  overlay.style.display = "none";
+});
+document.getElementById("confirmClear").addEventListener("click", async () => {
+  try {
+    const weekStart = await getLastClearDate(); // تاريخ بداية الأسبوع اللي بيتمسح دلوقتي
+    await archiveCurrentWeek(weekStart);
+    // الأسبوع الجديد لازم يبدأ اليوم اللي بعد آخر يوم في الأسبوع اللي اتمسح (يعني weekStart + 7 يوم)
+    // مش "النهاردة" زي ما كان بيحصل، لإن لو المسح بيحصل في معاده (بعد 7 أيام بالظبط)
+    // "النهاردة" بيبقى هو نفسه آخر يوم في الأسبوع القديم، فيتكرر نفس التاريخ في الأسبوعين.
+    let nextStart = localDateStr();
+    if (weekStart) {
+      const d = new Date(weekStart + "T00:00:00");
+      d.setDate(d.getDate() + 7);
+      nextStart = localDateStr(d);
+    }
+    await setLastClearDate(nextStart);
+  } catch(err) {
+    console.error("Archiving/clearing failed:", err);
+  }
+  data = freshData();
+  buildRows();
+  recalcAllRows();
+  recalcFooter();
+  overlay.style.display = "none";
+  try {
+    await storageAPI.set(JSON.stringify(data));
+  } catch(err){ console.error(err); }
+});
+
+function exportToExcel(){
+  const dayLabels = ["السبت","الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة"];
+  const header = ["م","الوجهة (البلد)","السعر", ...dayLabels, "إجمالي المشاوير","إجمالي الفلوس","ملاحظات"];
+  const rows = [header];
+
+  let grandTrips = 0, grandMoney = 0;
+  const dayTotals = {sat:0,sun:0,mon:0,tue:0,wed:0,thu:0,fri:0};
+
+  destinations.forEach((d, i) => {
+    const [name, price] = d;
+    const row = data[name] || freshDayRow();
+    const dayVals = dayKeys.map(k => row[k] || 0);
+    dayKeys.forEach((k, idx) => { dayTotals[k] += dayVals[idx]; });
+    const trips = dayVals.reduce((s,v) => s+v, 0);
+    const money = trips * price;
+    grandTrips += trips;
+    grandMoney += money;
+    rows.push([i+1, name, price, ...dayVals, trips, money, row.note || ""]);
+  });
+
+  rows.push([
+    "", "الإجمالي", "",
+    ...dayKeys.map(k => dayTotals[k]),
+    grandTrips, grandMoney, ""
+  ]);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws["!cols"] = [
+    {wch:5}, {wch:45}, {wch:10},
+    {wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},
+    {wch:13},{wch:13},{wch:30}
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "مشاوير عربية 22");
+
+  const now = new Date();
+  const dateStr = localDateStr(now);
+  XLSX.writeFile(wb, `مشاوير_عربية_22_${dateStr}.xlsx`);
+}
+
+// --- إدارة البلاد والأسعار ---
+let destinationsDraft = [];
+function renderDestinationsDraft(){
+  const tbody = document.getElementById("destinationsTbody");
+  tbody.innerHTML = "";
+  destinationsDraft.forEach((d, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input type="text" class="note-input" style="width:100%;" data-idx="${i}" data-field="name" value="${esc(d[0])}"></td>
+      <td><input type="number" min="0" class="day-input" style="width:80px;" data-idx="${i}" data-field="price" value="${d[1]}"></td>
+      <td><button class="header-btn danger" data-remove="${i}" style="padding:5px 10px;font-size:.75rem;flex:none;">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll("input").forEach(inp => {
+    inp.addEventListener("input", (e) => {
+      const idx = parseInt(e.target.dataset.idx);
+      if (e.target.dataset.field === "name") destinationsDraft[idx][0] = e.target.value;
+      else destinationsDraft[idx][1] = parseFloat(e.target.value) || 0;
+    });
+  });
+  tbody.querySelectorAll("button[data-remove]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      destinationsDraft.splice(parseInt(btn.dataset.remove), 1);
+      renderDestinationsDraft();
+    });
+  });
+}
+
+document.getElementById("openDestinations").addEventListener("click", () => {
+  if (!isAdmin) { alert("الصلاحية دي للأدمن بس."); return; }
+  destinationsDraft = destinations.map(d => [d[0], d[1], d[0]]); // التالت = الاسم الأصلي (عشان لو اتغير نحافظ على مشاويره)
+  document.getElementById("destinationsError").style.display = "none";
+  document.getElementById("newDestName").value = "";
+  document.getElementById("newDestPrice").value = "";
+  renderDestinationsDraft();
+  document.getElementById("destinationsOverlay").style.display = "flex";
+});
+
+// --- تصحيح تواريخ الأرشيف (أداة إدارية لنقل مجموعة أيام غلط لتاريخها الصح دفعة واحدة) ---
+async function findDateFixMatches(){
+  const from = document.getElementById("dateFixFrom").value;
+  const to = document.getElementById("dateFixTo").value;
+  const shift = parseInt(document.getElementById("dateFixShift").value);
+  const errEl = document.getElementById("dateFixError");
+  errEl.style.display = "none";
+  if (!from || !to || isNaN(shift) || shift === 0) {
+    errEl.textContent = "لازم تحدد من تاريخ، لحد تاريخ، وعدد أيام مش صفر.";
+    errEl.style.display = "block";
+    return null;
+  }
+  const history = await getAllHistory();
+  const matches = history.filter(e => e.date && e.date >= from && e.date <= to);
+  const allDates = new Set(history.filter(e => e.date).map(e => e.date));
+  const withNewDates = matches.map(e => {
+    const newDateObj = new Date(e.date + "T00:00:00");
+    newDateObj.setDate(newDateObj.getDate() + shift);
+    const newDate = localDateStr(newDateObj);
+    return { ...e, newDate, collision: allDates.has(newDate) && newDate !== e.date };
+  });
+  return withNewDates;
+}
+
+document.getElementById("previewDateFix").addEventListener("click", async () => {
+  const preview = document.getElementById("dateFixPreview");
+  preview.textContent = "بيدوّر...";
+  const matches = await findDateFixMatches();
+  if (!matches) { preview.textContent = ""; return; }
+  if (matches.length === 0) {
+    preview.textContent = "مفيش أيام في النطاق ده.";
+    return;
+  }
+  preview.innerHTML = matches.map(m => `
+    <div style="display:flex; justify-content:space-between; padding:4px 0; ${m.collision ? 'color:var(--danger-dark);font-weight:700;' : ''}">
+      <span>${m.date} ← (${fmt(m.grandTrips)} مشوار، ${fmt(m.grandMoney)} جنيه)</span>
+      <span>⬅ هتبقى ${m.newDate}${m.collision ? ' ⚠️ فيه يوم تاني بنفس التاريخ ده أصلًا' : ''}</span>
+    </div>
+  `).join("");
+});
+
+document.getElementById("applyDateFix").addEventListener("click", async () => {
+  const errEl = document.getElementById("dateFixError");
+  const matches = await findDateFixMatches();
+  if (!matches) return;
+  if (matches.length === 0) {
+    errEl.textContent = "مفيش أيام في النطاق ده أصلًا.";
+    errEl.style.display = "block";
+    return;
+  }
+  if (!confirm(`هتنقل ${matches.length} يوم لتاريخهم الجديد. متأكد؟`)) return;
+  const btn = document.getElementById("applyDateFix");
+  btn.disabled = true;
+  try {
+    await Promise.all(matches.map(m => updateHistoryEntryDate(m.id, m.newDate)));
+    document.getElementById("dateFixPreview").textContent = `تم! اتنقل ${matches.length} يوم.`;
+  } catch(err) {
+    console.error(err);
+    errEl.textContent = "حصلت مشكلة أثناء النقل.";
+    errEl.style.display = "block";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById("openDateFix").addEventListener("click", () => {
+  if (!isAdmin) { alert("الصلاحية دي للأدمن بس."); return; }
+  document.getElementById("dateFixFrom").value = "";
+  document.getElementById("dateFixTo").value = "";
+  document.getElementById("dateFixShift").value = "-7";
+  document.getElementById("dateFixPreview").textContent = "";
+  document.getElementById("dateFixError").style.display = "none";
+  document.getElementById("dateFixOverlay").style.display = "flex";
+});
+document.getElementById("closeDateFix").addEventListener("click", () => {
+  document.getElementById("dateFixOverlay").style.display = "none";
+});
+
+document.getElementById("closeDestinations").addEventListener("click", () => {
+  document.getElementById("destinationsOverlay").style.display = "none";
+});
+document.getElementById("addDestinationRow").addEventListener("click", () => {
+  const name = document.getElementById("newDestName").value.trim();
+  const price = parseFloat(document.getElementById("newDestPrice").value);
+  if (!name || isNaN(price) || price <= 0) return;
+  destinationsDraft.push([name, price]);
+  document.getElementById("newDestName").value = "";
+  document.getElementById("newDestPrice").value = "";
+  renderDestinationsDraft();
+});
+document.getElementById("saveDestinations").addEventListener("click", async () => {
+  const errEl = document.getElementById("destinationsError");
+  const cleaned = destinationsDraft.map(d => [String(d[0]).trim(), Number(d[1])]);
+  if (cleaned.some(d => !d[0] || isNaN(d[1]) || d[1] <= 0)) {
+    errEl.textContent = "لازم كل بلد يكون ليها اسم وسعر أكبر من صفر.";
+    errEl.style.display = "block";
+    return;
+  }
+  const names = cleaned.map(d => d[0]);
+  if (new Set(names).size !== names.length) {
+    errEl.textContent = "فيه اسم بلد مكرر مرتين، لازم كل اسم يكون مختلف.";
+    errEl.style.display = "block";
+    return;
+  }
+  errEl.style.display = "none";
+  const saveBtn = document.getElementById("saveDestinations");
+  const saveBtnText = saveBtn.textContent;
+  saveBtn.disabled = true;
+  saveBtn.textContent = "بيتحفظ...";
+  try {
+    await withTimeout(saveDestinations(cleaned), 10000);
+  } catch(err) {
+    console.error("Saving destinations failed:", err);
+    const why = (err && err.message === "timeout")
+      ? "السيرفر مردّش (اتأكد من النت)."
+      : ("السيرفر رفض الحفظ" + (err && err.code ? " (" + err.code + ")" : "") + ".");
+    errEl.textContent = "التعديل ما اتحفظش. " + why + " جرب تاني.";
+    errEl.style.display = "block";
+    saveBtn.disabled = false;
+    saveBtn.textContent = saveBtnText;
+    return;
+  }
+  saveBtn.disabled = false;
+  saveBtn.textContent = saveBtnText;
+  // لو اسم بلد اتغير، مشاوير الأسبوع الحالي تفضل معاه بدل ما تضيع
+  destinationsDraft.forEach(d => {
+    const newName = String(d[0]).trim();
+    const oldName = d[2];
+    if (oldName && oldName !== newName && data[oldName] && !data[newName]) {
+      data[newName] = data[oldName];
+      if (!cleaned.some(c => c[0] === oldName)) delete data[oldName];
+    }
+  });
+  ensureDataShape();
+  buildRows();
+  recalcAllRows();
+  recalcFooter();
+  try { await storageAPI.set(JSON.stringify(data)); } catch(err){ console.error(err); }
+  document.getElementById("destinationsOverlay").style.display = "none";
+});
+
+// --- نسخة احتياطية كاملة (JSON) تقدر تنزّلها وتحتفظ بيها ---
+document.getElementById("downloadBackup").addEventListener("click", async () => {
+  const btn = document.getElementById("downloadBackup");
+  btn.disabled = true;
+  try {
+    const [history, expenses, lastClear] = await Promise.all([getAllHistory(), getAllExpenses(), getLastClearDate()]);
+    const backup = {
+      exportedAt: new Date().toISOString(),
+      destinations, data, history, expenses, lastClearDate: lastClear
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `مشاوير_عربية_22_نسخة_احتياطية_${localDateStr()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch(err) {
+    console.error(err);
+    alert("حصلت مشكلة في تجهيز النسخة الاحتياطية.");
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById("exportExcel").addEventListener("click", exportToExcel);
+
+const moreMenuEl = document.getElementById("moreMenu");
+const moreBtnEl = document.getElementById("toggleMoreMenu");
+moreBtnEl.addEventListener("click", () => {
+  moreMenuEl.hidden = !moreMenuEl.hidden;
+  moreBtnEl.textContent = moreMenuEl.hidden ? "المزيد ▾" : "المزيد ▴";
+});
+moreMenuEl.addEventListener("click", (e) => {
+  if (e.target.closest("button")) {
+    moreMenuEl.hidden = true;
+    moreBtnEl.textContent = "المزيد ▾";
+  }
+});
+
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  if (firebaseReady) firebase.auth().signOut();
+});
+
+async function initApp(){
+  await loadDestinations();
+  await loadData();
+}
+</script>
+</body>
+</html>
